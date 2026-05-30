@@ -1,0 +1,61 @@
+<view class="page index-page">
+  <view class="brand-row">
+    <view class="brand"><view class="brand-mark"></view><text>星轨学习舱</text></view>
+    <text class="tag gold">M0 本地闭环</text>
+  </view>
+
+  <view class="hero card">
+    <text class="tag gold">今日学习任务</text>
+    <view class="hero-title">把一段知识变成可闯关的测验</view>
+    <view class="hero-subtitle">输入一段内容，AI 将生成题目。你答题后会得到即时解析和学习报告。</view>
+    <view class="mascot">
+      <view class="helmet"></view>
+      <view class="face"></view>
+      <view class="body"></view>
+    </view>
+  </view>
+
+  <view class="section-title">
+    <text>输入知识内容</text>
+    <text class="muted">{{contentLength}} 字</text>
+  </view>
+  <view class="input-card card">
+    <textarea
+      value="{{content}}"
+      maxlength="-1"
+      auto-height="{{false}}"
+      placeholder="例：把费曼学习法的核心步骤变成 3 道题，帮我检查自己是否真正理解。"
+      bindinput="onInput"
+    />
+    <view class="quick-row">
+      <button class="quick-chip" bindtap="useExample" data-index="0">费曼学习法</button>
+      <button class="quick-chip" bindtap="useExample" data-index="1">碎片化学习</button>
+      <button class="quick-chip" bindtap="useExample" data-index="2">复利思维</button>
+    </view>
+  </view>
+
+  <view class="section-title">
+    <text>出题参数</text>
+    <text class="muted">标准难度</text>
+  </view>
+  <view class="option-row">
+    <button class="pill {{questionCount == 3 ? 'active' : ''}}" bindtap="setQuestionCount" data-count="3">3 题速测</button>
+    <button class="pill {{questionCount == 5 ? 'active' : ''}}" bindtap="setQuestionCount" data-count="5">5 题挑战</button>
+    <button class="pill active">单选</button>
+    <button class="pill active">判断</button>
+  </view>
+
+  <view class="section-title">
+    <text>本轮会跑通</text>
+    <text class="muted">核心闭环</text>
+  </view>
+  <view class="flow-card card">
+    <view class="flow-step"><text>1</text><view><text>用户输入内容</text><text class="small muted">支持自由文本与示例模板</text></view></view>
+    <view class="flow-step"><text>2</text><view><text>AI 生成题目</text><text class="small muted">本地 Mock AI，后续可替换真实 API</text></view></view>
+    <view class="flow-step"><text>3</text><view><text>用户答题</text><text class="small muted">前端即时判题和解析</text></view></view>
+    <view class="flow-step"><text>4</text><view><text>AI 生成分析报告</text><text class="small muted">正确率、薄弱点、复习建议</text></view></view>
+  </view>
+
+  <button class="primary-btn start-btn" disabled="{{!canStart}}" bindtap="startGenerate">启动知识跃迁</button>
+  <view class="safe-bottom"></view>
+</view>

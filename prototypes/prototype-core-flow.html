@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 闯关学习小程序核心流程原型</title>
+  <style>
+    :root {
+      --ink: #102138;
+      --muted: #66758c;
+      --faint: #8fa0b8;
+      --panel: rgba(255, 255, 255, 0.78);
+      --panel-solid: #ffffff;
+      --line: rgba(82, 130, 188, 0.22);
+      --blue: #2f7df1;
+      --blue-2: #69c8ff;
+      --navy: #14345c;
+      --gold: #c7922e;
+      --gold-soft: #fff2cf;
+      --mint: #18a985;
+      --mint-soft: #e2fff7;
+      --rose: #d85c74;
+      --rose-soft: #fff0f3;
+      --cloud: #f5f8ff;
+      --paper: #fbfdff;
+      --shadow: 0 18px 50px rgba(37, 74, 130, 0.14);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "HarmonyOS Sans SC", "MiSans", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(105, 200, 255, 0.24), transparent 24%),
+        radial-gradient(circle at 80% 0%, rgba(255, 229, 170, 0.32), transparent 28%),
+        linear-gradient(135deg, #eef6ff 0%, #f9fbff 45%, #fff9ed 100%);
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    body::before {
+      background-image:
+        linear-gradient(115deg, transparent 0 42%, rgba(47, 125, 241, 0.12) 42.2%, transparent 42.8%),
+        linear-gradient(138deg, transparent 0 58%, rgba(199, 146, 46, 0.16) 58.2%, transparent 58.7%),
+        radial-gradient(circle, rgba(20, 52, 92, 0.22) 0 1px, transparent 1.4px);
+      background-size: 100% 100%, 100% 100%, 34px 34px;
+      opacity: 0.58;
+    }
+
+    body::after {
+      background:
+        repeating-linear-gradient(90deg, transparent 0 76px, rgba(47, 125, 241, 0.06) 77px 78px, transparent 79px 154px);
+      mask-image: linear-gradient(to bottom, transparent, black 16%, black 84%, transparent);
+    }
+
+    .page-shell {
+      width: min(1320px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 34px 0 46px;
+    }
+
+    .board-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: end;
+      margin-bottom: 26px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid rgba(47, 125, 241, 0.22);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.58);
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border: 2px solid var(--blue);
+      transform: rotate(45deg);
+      background: #fff;
+    }
+
+    h1 {
+      margin: 12px 0 8px;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.08;
+      font-weight: 900;
+      color: #0d2b4f;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .flow-strip {
+      min-width: 318px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.66);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .flow-strip strong {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--navy);
+      font-size: 13px;
+    }
+
+    .flow-nodes {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .flow-nodes span {
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: #f4f8ff;
+      border: 1px solid rgba(47, 125, 241, 0.12);
+    }
+
+    .prototype-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(310px, 390px));
+      gap: 24px;
+      justify-content: center;
+      align-items: start;
+    }
+
+    .screen-card {
+      width: min(390px, 100%);
+    }
+
+    .screen-caption {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 4px 10px;
+      font-size: 13px;
+      color: var(--navy);
+      font-weight: 800;
+    }
+
+    .screen-caption small {
+      color: var(--faint);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .phone {
+      position: relative;
+      width: 100%;
+      height: 844px;
+      overflow: hidden;
+      border-radius: 8px;
+      border: 1px solid rgba(71, 115, 172, 0.28);
+      background:
+        linear-gradient(170deg, rgba(255,255,255,0.92), rgba(239,247,255,0.92)),
+        radial-gradient(circle at 18% 10%, rgba(105,200,255,0.2), transparent 30%);
+      box-shadow: var(--shadow);
+    }
+
+    .phone::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(128deg, transparent 0 36%, rgba(47, 125, 241, 0.11) 36.3%, transparent 36.9%),
+        linear-gradient(48deg, transparent 0 64%, rgba(199, 146, 46, 0.12) 64.2%, transparent 64.7%),
+        radial-gradient(circle, rgba(47, 125, 241, 0.18) 0 1px, transparent 1.4px);
+      background-size: 100% 100%, 100% 100%, 28px 28px;
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .phone > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .status {
+      height: 34px;
+      padding: 10px 18px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #29456a;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .status .signals {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .signal-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--navy);
+      opacity: 0.75;
+    }
+
+    .appbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 18px 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 900;
+      color: var(--navy);
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(47, 125, 241, 0.28);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, #ffffff, #dff3ff);
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 0 0 3px rgba(255,255,255,0.6);
+    }
+
+    .brand-mark::before {
+      content: "";
+      width: 11px;
+      height: 11px;
+      border-top: 3px solid var(--gold);
+      border-right: 3px solid var(--blue);
+      transform: rotate(45deg);
+    }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(47, 125, 241, 0.18);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--navy);
+      font-weight: 900;
+      display: grid;
+      place-items: center;
+    }
+
+    .content {
+      padding: 0 18px 20px;
+    }
+
+    .hero-card {
+      position: relative;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 18px 32px rgba(62, 111, 173, 0.13);
+      overflow: hidden;
+    }
+
+    .hero-card::after,
+    .panel::after,
+    .question-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 34px;
+      height: 34px;
+      border-top: 2px solid rgba(199, 146, 46, 0.65);
+      border-right: 2px solid rgba(199, 146, 46, 0.65);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 72% 100%, 72% 28%, 0 28%);
+      opacity: 0.8;
+    }
+
+    .hero-title {
+      margin: 10px 0 8px;
+      max-width: 265px;
+      font-size: 26px;
+      line-height: 1.18;
+      color: #0f2e54;
+      font-weight: 900;
+    }
+
+    .hero-card.with-mascot {
+      min-height: 238px;
+    }
+
+    .hero-card.with-mascot .hero-title,
+    .hero-card.with-mascot .hero-subtitle {
+      max-width: 218px;
+    }
+
+    .mascot {
+      display: block;
+      color: var(--blue);
+      filter: drop-shadow(0 16px 22px rgba(47, 125, 241, 0.18));
+    }
+
+    .mascot.home {
+      position: absolute;
+      top: 26px;
+      right: 14px;
+      width: 92px;
+      height: 116px;
+      animation: float-soft 4.6s ease-in-out infinite;
+    }
+
+    .mascot.mini {
+      width: 50px;
+      height: 62px;
+      flex: 0 0 auto;
+    }
+
+    .mascot.report {
+      position: absolute;
+      right: 14px;
+      top: 13px;
+      width: 76px;
+      height: 92px;
+      opacity: 0.96;
+      animation: float-soft 5.4s ease-in-out infinite;
+    }
+
+    .mascot.poster-mascot {
+      position: absolute;
+      top: 88px;
+      right: 18px;
+      width: 98px;
+      height: 116px;
+      opacity: 0.96;
+    }
+
+    .mascot .linework {
+      stroke: #17395e;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .mascot .soft-line {
+      stroke: rgba(47, 125, 241, 0.42);
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      fill: none;
+    }
+
+    .mascot .face {
+      fill: #fff9ed;
+    }
+
+    .mascot .helmet {
+      fill: #eef9ff;
+    }
+
+    .mascot .visor {
+      fill: #dff3ff;
+    }
+
+    .mascot .gold-fill {
+      fill: #ffe6a7;
+    }
+
+    .mascot .blue-fill {
+      fill: #8bdcff;
+    }
+
+    .mascot .mint-fill {
+      fill: #bff8e9;
+    }
+
+    .mascot .cheek {
+      fill: #ffd7df;
+      opacity: 0.8;
+    }
+
+    .guide-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(47, 125, 241, 0.14);
+      background: rgba(255, 255, 255, 0.68);
+    }
+
+    .guide-card strong {
+      display: block;
+      color: var(--navy);
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .guide-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .coach-strip {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 12px;
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(199, 146, 46, 0.2);
+      background: rgba(255, 248, 226, 0.74);
+      color: #75500f;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .coach-strip .mascot {
+      width: 34px;
+      height: 42px;
+    }
+
+    @keyframes float-soft {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .hero-subtitle {
+      margin: 0;
+      max-width: 285px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .hud-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 24px;
+      padding: 4px 9px;
+      border: 1px solid rgba(47, 125, 241, 0.2);
+      border-radius: 6px;
+      background: rgba(240, 248, 255, 0.82);
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .hud-label.gold {
+      color: #9a6a13;
+      background: rgba(255, 246, 219, 0.86);
+      border-color: rgba(199, 146, 46, 0.28);
+    }
+
+    .hud-label.mint {
+      color: #08795f;
+      background: rgba(231, 255, 248, 0.88);
+      border-color: rgba(24, 169, 133, 0.24);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 18px 2px 10px;
+      color: var(--navy);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .section-title span:last-child {
+      color: var(--faint);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .input-dock {
+      position: relative;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: var(--radius);
+      background: rgba(246, 250, 255, 0.88);
+      border: 1px solid rgba(47, 125, 241, 0.16);
+    }
+
+    .input-dock textarea {
+      display: block;
+      width: 100%;
+      height: 114px;
+      resize: none;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .dock-actions,
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 7px 10px;
+      border-radius: 7px;
+      border: 1px solid rgba(47, 125, 241, 0.16);
+      background: rgba(255, 255, 255, 0.72);
+      color: #315171;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .chip.active {
+      color: #0f4fa5;
+      border-color: rgba(47, 125, 241, 0.34);
+      background: #e7f3ff;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.72);
+    }
+
+    .template-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .template-item {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 11px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(47, 125, 241, 0.14);
+      background: rgba(255,255,255,0.72);
+    }
+
+    .template-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #eaf6ff, #fff4d4);
+      border: 1px solid rgba(47,125,241,0.13);
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+      font-weight: 900;
+    }
+
+    .template-item strong {
+      display: block;
+      font-size: 13px;
+      color: var(--navy);
+      margin-bottom: 3px;
+    }
+
+    .template-item small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      padding: 13px 14px;
+      font: inherit;
+      font-weight: 900;
+    }
+
+    .primary-btn {
+      margin-top: 16px;
+      color: #072243;
+      background:
+        linear-gradient(135deg, #ffe7a6, #86ddff 48%, #6db4ff);
+      box-shadow: 0 12px 28px rgba(47, 125, 241, 0.22);
+    }
+
+    .secondary-btn {
+      margin-top: 10px;
+      color: var(--navy);
+      background: rgba(255,255,255,0.74);
+      border: 1px solid rgba(47, 125, 241, 0.18);
+    }
+
+    .bottom-nav {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 16px;
+      height: 58px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 7px;
+      padding: 7px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(47, 125, 241, 0.16);
+      box-shadow: 0 14px 32px rgba(31, 77, 135, 0.13);
+      backdrop-filter: blur(16px);
+    }
+
+    .nav-item {
+      display: grid;
+      place-items: center;
+      color: var(--faint);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .nav-item.active {
+      color: var(--blue);
+      background: #edf7ff;
+      border-radius: 7px;
+    }
+
+    .scan-wrap {
+      display: grid;
+      place-items: center;
+      padding: 16px 0 12px;
+    }
+
+    .scan-ring {
+      position: relative;
+      width: 164px;
+      height: 164px;
+      border-radius: 50%;
+      background:
+        conic-gradient(from 0deg, var(--blue), var(--gold), var(--blue-2), var(--blue));
+      display: grid;
+      place-items: center;
+      animation: spin 4s linear infinite;
+      box-shadow: 0 18px 42px rgba(47,125,241,0.18);
+    }
+
+    .scan-ring::before {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #f8fcff, #eef7ff);
+    }
+
+    .scan-ring::after {
+      content: "";
+      position: absolute;
+      width: 68%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(47,125,241,0.66), transparent);
+      animation: sweep 2.4s ease-in-out infinite;
+    }
+
+    .scan-core {
+      position: relative;
+      z-index: 2;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--navy);
+      background:
+        radial-gradient(circle, #fff 0 48%, #e8f5ff 49% 100%);
+      border: 1px solid rgba(47,125,241,0.22);
+      animation: reverse-spin 4s linear infinite;
+    }
+
+    .scan-core strong {
+      display: block;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .scan-core span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes reverse-spin {
+      to { transform: rotate(-360deg); }
+    }
+
+    @keyframes sweep {
+      0%, 100% { transform: rotate(0deg); opacity: 0.42; }
+      50% { transform: rotate(170deg); opacity: 1; }
+    }
+
+    .panel {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      padding: 14px;
+      box-shadow: 0 16px 30px rgba(47, 86, 140, 0.11);
+    }
+
+    .log-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .log-item {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 8px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.64);
+      border: 1px solid rgba(47,125,241,0.11);
+    }
+
+    .log-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #edf7ff;
+      color: var(--blue);
+      font-weight: 900;
+    }
+
+    .log-dot.done {
+      background: var(--mint-soft);
+      color: var(--mint);
+    }
+
+    .log-item strong {
+      display: block;
+      color: var(--navy);
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .log-item small {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .progress-track {
+      height: 8px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(47,125,241,0.11);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 68%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--blue-2), var(--gold));
+    }
+
+    .question-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 4px 0 12px;
+    }
+
+    .question-count {
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .question-card {
+      position: relative;
+      padding: 18px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(47,125,241,0.18);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.86), rgba(246,251,255,0.88));
+      box-shadow: 0 18px 36px rgba(47,86,140,0.12);
+    }
+
+    .question-card h2 {
+      margin: 12px 0 0;
+      color: var(--navy);
+      font-size: 20px;
+      line-height: 1.38;
+    }
+
+    .source-chip {
+      display: inline-flex;
+      margin-top: 12px;
+      padding: 7px 9px;
+      border-radius: 7px;
+      color: #45627e;
+      font-size: 11px;
+      font-weight: 800;
+      background: #f1f6ff;
+      border: 1px solid rgba(47,125,241,0.12);
+    }
+
+    .options {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .option {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 10px;
+      align-items: center;
+      min-height: 58px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(47,125,241,0.14);
+      background: rgba(255,255,255,0.72);
+      color: #24445f;
+      font-size: 13px;
+      line-height: 1.45;
+      cursor: pointer;
+    }
+
+    .option .key {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+      font-weight: 900;
+      background: #ecf7ff;
+    }
+
+    .option.selected {
+      border-color: rgba(47,125,241,0.46);
+      background: #eef8ff;
+      box-shadow: inset 0 0 0 1px rgba(47,125,241,0.14);
+    }
+
+    .option.correct {
+      border-color: rgba(24,169,133,0.42);
+      background: var(--mint-soft);
+    }
+
+    .option.wrong {
+      border-color: rgba(216,92,116,0.34);
+      background: var(--rose-soft);
+    }
+
+    .option.correct .key {
+      color: #08795f;
+      background: #cffff2;
+    }
+
+    .option.wrong .key {
+      color: #b13950;
+      background: #ffe2e8;
+    }
+
+    .analysis-card {
+      margin-top: 12px;
+      padding: 13px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.76);
+      border: 1px solid rgba(24,169,133,0.18);
+    }
+
+    .analysis-card strong {
+      display: block;
+      color: #08795f;
+      font-size: 13px;
+      margin-bottom: 7px;
+    }
+
+    .analysis-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .report-hero {
+      text-align: center;
+      padding: 20px 14px 18px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(199,146,46,0.24);
+      background:
+        linear-gradient(180deg, rgba(255,248,230,0.9), rgba(255,255,255,0.82));
+      box-shadow: 0 18px 34px rgba(199,146,46,0.13);
+    }
+
+    .grade {
+      width: 104px;
+      height: 104px;
+      margin: 0 auto 10px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #7b530e;
+      font-size: 42px;
+      font-weight: 900;
+      background:
+        radial-gradient(circle, #fff 0 46%, #ffefbf 47% 100%);
+      border: 1px solid rgba(199,146,46,0.35);
+      box-shadow: inset 0 0 0 8px rgba(255,255,255,0.62);
+    }
+
+    .report-hero h2 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      color: var(--navy);
+    }
+
+    .report-hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+      margin-top: 13px;
+    }
+
+    .stat {
+      min-height: 68px;
+      padding: 10px 6px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(47,125,241,0.12);
+      text-align: center;
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--navy);
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 5px;
+      color: var(--faint);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .knowledge-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .knowledge-row {
+      display: grid;
+      grid-template-columns: 1fr 92px;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(47,125,241,0.1);
+    }
+
+    .knowledge-row strong {
+      color: var(--navy);
+      font-size: 13px;
+    }
+
+    .mini-track {
+      height: 7px;
+      border-radius: 8px;
+      background: rgba(47,125,241,0.1);
+      overflow: hidden;
+    }
+
+    .mini-fill {
+      height: 100%;
+      width: var(--w);
+      background: linear-gradient(90deg, var(--mint), var(--blue-2));
+      border-radius: inherit;
+    }
+
+    .poster-stage {
+      padding: 14px;
+      height: calc(100% - 94px);
+      display: grid;
+      align-items: center;
+    }
+
+    .poster {
+      position: relative;
+      overflow: hidden;
+      min-height: 622px;
+      border-radius: 8px;
+      border: 1px solid rgba(47,125,241,0.22);
+      background:
+        radial-gradient(circle at 30% 12%, rgba(105,200,255,0.28), transparent 28%),
+        linear-gradient(165deg, #ffffff, #eef8ff 54%, #fff4d4);
+      box-shadow: 0 20px 48px rgba(47,86,140,0.2);
+      padding: 26px 20px 22px;
+    }
+
+    .poster::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(130deg, transparent 0 36%, rgba(47,125,241,0.14) 36.2%, transparent 36.8%),
+        linear-gradient(50deg, transparent 0 70%, rgba(199,146,46,0.16) 70.2%, transparent 70.8%);
+      pointer-events: none;
+    }
+
+    .poster > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .poster-badge {
+      display: inline-flex;
+      padding: 7px 10px;
+      border-radius: 7px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(199,146,46,0.22);
+      color: #8a6217;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .poster h2 {
+      margin: 22px 0 8px;
+      color: var(--navy);
+      font-size: 30px;
+      line-height: 1.12;
+    }
+
+    .poster p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    .poster-score {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 116px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .score-medal {
+      width: 116px;
+      height: 116px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #7b530e;
+      font-size: 38px;
+      font-weight: 900;
+      background: radial-gradient(circle, #fff 0 42%, #ffe7a6 43% 100%);
+      border: 1px solid rgba(199,146,46,0.35);
+    }
+
+    .poster-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .poster-tag {
+      padding: 7px 9px;
+      border-radius: 7px;
+      background: rgba(255,255,255,0.68);
+      border: 1px solid rgba(47,125,241,0.12);
+      color: var(--navy);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .qr-row {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 22px;
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .qr {
+      width: 84px;
+      height: 84px;
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, #15375e 8px, transparent 8px) 0 0/18px 18px,
+        linear-gradient(#15375e 8px, transparent 8px) 0 0/18px 18px,
+        #fff;
+      border: 8px solid #fff;
+      box-shadow: 0 10px 24px rgba(20,52,92,0.16);
+    }
+
+    .qr-copy strong {
+      display: block;
+      color: var(--navy);
+      font-size: 15px;
+      margin-bottom: 5px;
+    }
+
+    .qr-copy span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .floating-note {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.68);
+      border: 1px dashed rgba(47,125,241,0.26);
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .spacer-10 { height: 10px; }
+    .spacer-14 { height: 14px; }
+    .spacer-18 { height: 18px; }
+
+    @media (max-width: 1240px) {
+      .prototype-grid {
+        grid-template-columns: repeat(2, minmax(310px, 390px));
+      }
+    }
+
+    @media (max-width: 820px) {
+      .page-shell {
+        width: min(430px, calc(100vw - 20px));
+        padding-top: 22px;
+      }
+
+      .board-head {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-strip {
+        min-width: 0;
+      }
+
+      .flow-nodes {
+        flex-wrap: wrap;
+        white-space: normal;
+      }
+
+      .prototype-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+    <symbol id="svg-navigator" viewBox="0 0 120 150">
+      <path d="M20 112c-9 5-13 13-12 22m92-22c9 5 13 13 12 22" fill="none" stroke="rgba(47,125,241,0.42)" stroke-width="1.8" stroke-linecap="round" />
+      <path d="M28 52c0-22 14-38 32-38s32 16 32 38v31c0 21-14 36-32 36S28 104 28 83V52Z" fill="#eef9ff" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M37 50c4-13 13-21 23-21s19 8 23 21c-5 7-13 11-23 11s-18-4-23-11Z" fill="#dff3ff" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M35 68c6-4 15-6 25-6s19 2 25 6v17c0 14-10 24-25 24S35 99 35 85V68Z" fill="#fff9ed" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M51 82h.1M69 82h.1M54 94c4 3 8 3 12 0" fill="none" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="45" cy="91" r="5" fill="#ffd7df" opacity="0.8" />
+      <circle cx="75" cy="91" r="5" fill="#ffd7df" opacity="0.8" />
+      <path d="M22 49c-8 2-13 8-14 16 8 2 14 0 19-6l-5-10Z" fill="#ffe6a7" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M98 49c8 2 13 8 14 16-8 2-14 0-19-6l5-10Z" fill="#8bdcff" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M38 116h44l10 22H28l10-22Z" fill="#bff8e9" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M60 8v-6M91 24l5-5M29 24l-5-5M92 127l8 9M28 127l-8 9" fill="none" stroke="rgba(47,125,241,0.42)" stroke-width="1.8" stroke-linecap="round" />
+      <path d="M60 122l8 8-8 8-8-8 8-8Z" fill="#ffe6a7" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    </symbol>
+  </svg>
+  <main class="page-shell">
+    <header class="board-head">
+      <div>
+        <div class="eyebrow">AI 闯关学习小程序 · 核心流程原型</div>
+        <h1>星轨学习舱</h1>
+        <p class="lead">轻科幻明亮版 UI 原型，围绕“输入内容、AI 出题、闯关答题、复盘报告、分享裂变”的最小闭环展开。整体参考星际任务终端的意境，但保持学习产品的清爽与可读性。</p>
+      </div>
+      <aside class="flow-strip">
+        <strong>核心路径</strong>
+        <div class="flow-nodes">
+          <span>输入</span>
+          <span>生成</span>
+          <span>答题</span>
+          <span>解析</span>
+          <span>报告</span>
+          <span>分享</span>
+        </div>
+      </aside>
+    </header>
+
+    <section class="prototype-grid">
+      <article class="screen-card">
+        <div class="screen-caption">01 首页 / 知识输入 <small>Input Deck</small></div>
+        <div class="phone">
+          <div class="status">
+            <span>09:41</span>
+            <div class="signals"><span class="signal-dot"></span><span class="signal-dot"></span><span class="signal-dot"></span><span>100%</span></div>
+          </div>
+          <div class="appbar">
+            <div class="brand"><span class="brand-mark"></span><span>星轨学习舱</span></div>
+            <button class="icon-btn" aria-label="设置">···</button>
+          </div>
+          <div class="content">
+            <section class="hero-card with-mascot">
+              <svg class="mascot home" role="img" aria-label="星轨领航员卡通形象">
+                <use href="#svg-navigator"></use>
+              </svg>
+              <span class="hud-label gold">今日学习任务</span>
+              <h2 class="hero-title">把一段知识变成可闯关的测验</h2>
+              <p class="hero-subtitle">粘贴文章、笔记或课程片段，AI 将提炼考点并生成 3 到 5 道互动题。</p>
+              <div class="input-dock">
+                <textarea>例：把“费曼学习法”的核心步骤变成 3 道题，帮我检查自己是否真正理解。</textarea>
+                <div class="dock-actions">
+                  <span class="chip active">文本</span>
+                  <span class="chip">链接</span>
+                  <span class="chip">文件</span>
+                </div>
+              </div>
+            </section>
+
+            <div class="section-title"><span>出题参数</span><span>标准难度</span></div>
+            <div class="chip-row">
+              <span class="chip active">3 题速测</span>
+              <span class="chip">5 题挑战</span>
+              <span class="chip active">单选</span>
+              <span class="chip active">判断</span>
+            </div>
+
+            <div class="section-title"><span>推荐模板</span><span>换一批</span></div>
+            <div class="template-list">
+              <div class="template-item">
+                <span class="template-icon">A</span>
+                <div><strong>热门书籍拆解</strong><small>从一本书提炼关键观点</small></div>
+                <span class="hud-label">启动</span>
+              </div>
+              <div class="template-item">
+                <span class="template-icon">B</span>
+                <div><strong>趣味历史速测</strong><small>5 分钟记住一个历史片段</small></div>
+                <span class="hud-label">启动</span>
+              </div>
+            </div>
+            <button class="primary-btn">启动知识跃迁</button>
+          </div>
+          <nav class="bottom-nav">
+            <span class="nav-item active">首页</span>
+            <span class="nav-item">闯关</span>
+            <span class="nav-item">复盘</span>
+            <span class="nav-item">我的</span>
+          </nav>
+        </div>
+      </article>
+
+      <article class="screen-card">
+        <div class="screen-caption">02 AI 生成中 <small>Warp Scan</small></div>
+        <div class="phone">
+          <div class="status">
+            <span>09:42</span>
+            <div class="signals"><span class="signal-dot"></span><span class="signal-dot"></span><span class="signal-dot"></span><span>98%</span></div>
+          </div>
+          <div class="appbar">
+            <div class="brand"><span class="brand-mark"></span><span>知识跃迁</span></div>
+            <button class="icon-btn" aria-label="关闭">×</button>
+          </div>
+          <div class="content">
+            <section class="hero-card">
+              <span class="hud-label">AI 引擎在线</span>
+              <h2 class="hero-title">正在把知识点压缩成关卡</h2>
+              <p class="hero-subtitle">已进入结构化出题流程，系统会校验题目、答案和解析是否完整。</p>
+            </section>
+
+            <div class="scan-wrap">
+              <div class="scan-ring">
+                <div class="scan-core">
+                  <div><strong>68</strong><span>生成进度</span></div>
+                </div>
+              </div>
+            </div>
+
+            <section class="panel">
+              <div class="log-list">
+                <div class="log-item">
+                  <span class="log-dot done">✓</span>
+                  <div><strong>识别主题</strong><small>费曼学习法与知识内化</small></div>
+                  <span class="hud-label mint">完成</span>
+                </div>
+                <div class="log-item">
+                  <span class="log-dot done">✓</span>
+                  <div><strong>提炼考点</strong><small>4 个关键概念已收束</small></div>
+                  <span class="hud-label mint">完成</span>
+                </div>
+                <div class="log-item">
+                  <span class="log-dot">3</span>
+                  <div><strong>生成干扰项</strong><small>正在校验选项可信度</small></div>
+                  <span class="hud-label">进行中</span>
+                </div>
+              </div>
+              <div class="spacer-14"></div>
+              <div class="progress-track"><div class="progress-bar"></div></div>
+            </section>
+
+            <div class="guide-card">
+              <svg class="mascot mini" role="img" aria-label="星轨领航员提示">
+                <use href="#svg-navigator"></use>
+              </svg>
+              <div>
+                <strong>领航员提示</strong>
+                <span>若当前设备无法稳定接收流式片段，系统会自动切换到稳定模式继续生成。</span>
+              </div>
+            </div>
+            <button class="secondary-btn">放到后台生成</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="screen-card">
+        <div class="screen-caption">03 闯关答题 <small>Question Card</small></div>
+        <div class="phone">
+          <div class="status">
+            <span>09:43</span>
+            <div class="signals"><span class="signal-dot"></span><span class="signal-dot"></span><span class="signal-dot"></span><span>97%</span></div>
+          </div>
+          <div class="appbar">
+            <div class="brand"><span class="brand-mark"></span><span>第 2 关</span></div>
+            <button class="icon-btn" aria-label="暂停">Ⅱ</button>
+          </div>
+          <div class="content">
+            <div class="question-top">
+              <span class="question-count">02 / 05</span>
+              <span class="hud-label gold">标准难度</span>
+            </div>
+            <div class="progress-track"><div class="progress-bar" style="width: 40%;"></div></div>
+            <div class="spacer-18"></div>
+            <div class="coach-strip">
+              <svg class="mascot" role="img" aria-label="星轨领航员提示">
+                <use href="#svg-navigator"></use>
+              </svg>
+              <span>先找“目的”关键词，别被看起来正确的复习动作带偏。</span>
+            </div>
+
+            <section class="question-card">
+              <span class="hud-label">单选题</span>
+              <h2>费曼学习法中，“用自己的话讲出来”的主要目的是什么？</h2>
+              <span class="source-chip">考点追溯：检验是否真正理解概念，而不是只记住文字。</span>
+            </section>
+
+            <div class="options" data-options>
+              <div class="option" data-choice><span class="key">A</span><span>让笔记看起来更完整，便于日后归档。</span></div>
+              <div class="option selected" data-choice><span class="key">B</span><span>暴露理解漏洞，并把复杂知识转化成清楚表达。</span></div>
+              <div class="option" data-choice><span class="key">C</span><span>尽可能减少复习次数，只依赖第一次记忆。</span></div>
+              <div class="option" data-choice><span class="key">D</span><span>把学习重点放在背诵原文，而不是迁移应用。</span></div>
+            </div>
+
+            <button class="primary-btn">锁定答案</button>
+            <button class="secondary-btn">查看原文片段</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="screen-card">
+        <div class="screen-caption">04 即时解析 <small>Answer Reveal</small></div>
+        <div class="phone">
+          <div class="status">
+            <span>09:44</span>
+            <div class="signals"><span class="signal-dot"></span><span class="signal-dot"></span><span class="signal-dot"></span><span>96%</span></div>
+          </div>
+          <div class="appbar">
+            <div class="brand"><span class="brand-mark"></span><span>答题反馈</span></div>
+            <button class="icon-btn" aria-label="收藏">☆</button>
+          </div>
+          <div class="content">
+            <div class="question-top">
+              <span class="question-count">02 / 05</span>
+              <span class="hud-label mint">判定正确</span>
+            </div>
+            <div class="progress-track"><div class="progress-bar" style="width: 40%;"></div></div>
+            <div class="spacer-18"></div>
+
+            <section class="question-card">
+              <span class="hud-label">单选题</span>
+              <h2>费曼学习法中，“用自己的话讲出来”的主要目的是什么？</h2>
+              <span class="source-chip">本题命中：知识内化 / 表达检验</span>
+            </section>
+
+            <div class="options">
+              <div class="option"><span class="key">A</span><span>让笔记看起来更完整，便于日后归档。</span></div>
+              <div class="option correct"><span class="key">B</span><span>暴露理解漏洞，并把复杂知识转化成清楚表达。</span></div>
+              <div class="option"><span class="key">C</span><span>尽可能减少复习次数，只依赖第一次记忆。</span></div>
+              <div class="option wrong"><span class="key">D</span><span>把学习重点放在背诵原文，而不是迁移应用。</span></div>
+            </div>
+
+            <section class="analysis-card">
+              <strong>深度解析</strong>
+              <p>如果你无法把概念讲给别人听，通常说明理解仍停留在表面。费曼学习法要求把复杂概念重新组织成简单表达，从而定位遗漏、修正误解。</p>
+            </section>
+            <button class="primary-btn">进入下一关</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="screen-card">
+        <div class="screen-caption">05 学习报告 <small>Mission Report</small></div>
+        <div class="phone">
+          <div class="status">
+            <span>09:46</span>
+            <div class="signals"><span class="signal-dot"></span><span class="signal-dot"></span><span class="signal-dot"></span><span>95%</span></div>
+          </div>
+          <div class="appbar">
+            <div class="brand"><span class="brand-mark"></span><span>复盘报告</span></div>
+            <button class="icon-btn" aria-label="分享">↗</button>
+          </div>
+          <div class="content">
+            <section class="report-hero" style="position: relative;">
+              <svg class="mascot report" role="img" aria-label="星轨领航员庆祝">
+                <use href="#svg-navigator"></use>
+              </svg>
+              <div class="grade">A</div>
+              <h2>本次知识吸收良好</h2>
+              <p>你已经掌握核心概念，但在“举例迁移”上仍有提升空间。</p>
+              <div class="stat-grid">
+                <div class="stat"><strong>80%</strong><span>正确率</span></div>
+                <div class="stat"><strong>1:42</strong><span>耗时</span></div>
+                <div class="stat"><strong>73%</strong><span>击败用户</span></div>
+              </div>
+            </section>
+
+            <div class="section-title"><span>知识掌握图谱</span><span>3 个考点</span></div>
+            <section class="panel">
+              <div class="knowledge-list">
+                <div class="knowledge-row">
+                  <strong>概念复述</strong>
+                  <div class="mini-track"><div class="mini-fill" style="--w: 92%;"></div></div>
+                </div>
+                <div class="knowledge-row">
+                  <strong>漏洞定位</strong>
+                  <div class="mini-track"><div class="mini-fill" style="--w: 78%;"></div></div>
+                </div>
+                <div class="knowledge-row">
+                  <strong>举例迁移</strong>
+                  <div class="mini-track"><div class="mini-fill" style="--w: 56%;"></div></div>
+                </div>
+              </div>
+            </section>
+
+            <div class="section-title"><span>AI 复习建议</span><span>2 分钟</span></div>
+            <section class="analysis-card">
+              <strong>下一步行动</strong>
+              <p>请尝试用一个生活例子解释费曼学习法，例如“如何教朋友理解复利”。如果能讲清楚，你就完成了从记忆到应用的跃迁。</p>
+            </section>
+            <button class="primary-btn">生成分享海报</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="screen-card">
+        <div class="screen-caption">06 分享海报预览 <small>Share Poster</small></div>
+        <div class="phone">
+          <div class="status">
+            <span>09:47</span>
+            <div class="signals"><span class="signal-dot"></span><span class="signal-dot"></span><span class="signal-dot"></span><span>95%</span></div>
+          </div>
+          <div class="appbar">
+            <div class="brand"><span class="brand-mark"></span><span>海报预览</span></div>
+            <button class="icon-btn" aria-label="保存">↓</button>
+          </div>
+          <div class="poster-stage">
+            <section class="poster">
+              <svg class="mascot poster-mascot" role="img" aria-label="星轨领航员海报形象">
+                <use href="#svg-navigator"></use>
+              </svg>
+              <span class="poster-badge">星轨学习战报</span>
+              <h2>我完成了一次知识跃迁</h2>
+              <p>用 5 道题快速复盘“费曼学习法”，正确率达到 80%，薄弱点已被 AI 标记。</p>
+              <div class="poster-score">
+                <div class="score-medal">A</div>
+                <div>
+                  <span class="hud-label gold">击败 73% 学习者</span>
+                  <div class="poster-tags">
+                    <span class="poster-tag">概念复述 92%</span>
+                    <span class="poster-tag">漏洞定位 78%</span>
+                    <span class="poster-tag">举例迁移 56%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="qr-row">
+                <div class="qr" aria-label="小程序码占位"></div>
+                <div class="qr-copy">
+                  <strong>扫码挑战同一套题</strong>
+                  <span>把碎片知识变成 1 分钟闯关测验。</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    document.querySelectorAll('[data-options]').forEach((group) => {
+      group.addEventListener('click', (event) => {
+        const option = event.target.closest('[data-choice]');
+        if (!option) return;
+        group.querySelectorAll('[data-choice]').forEach((item) => item.classList.remove('selected'));
+        option.classList.add('selected');
+      });
+    });
+  </script>
+</body>
+</html>

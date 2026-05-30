@@ -1,0 +1,183 @@
+.hero {
+  min-height: 268rpx;
+  padding: 34rpx;
+}
+
+.hero-title {
+  width: 430rpx;
+  margin-top: 18rpx;
+  color: #0f2e54;
+  font-size: 46rpx;
+  line-height: 1.18;
+  font-weight: 900;
+}
+
+.hero-subtitle {
+  width: 440rpx;
+  margin-top: 16rpx;
+  color: #66758c;
+  font-size: 25rpx;
+  line-height: 1.7;
+}
+
+.mascot {
+  position: absolute;
+  right: 34rpx;
+  top: 72rpx;
+  width: 148rpx;
+  height: 176rpx;
+}
+
+.mascot .helmet {
+  position: absolute;
+  left: 26rpx;
+  top: 0;
+  width: 96rpx;
+  height: 120rpx;
+  border-radius: 52rpx 52rpx 42rpx 42rpx;
+  border: 5rpx solid #17395e;
+  background: #eef9ff;
+}
+
+.mascot .helmet::before,
+.mascot .helmet::after {
+  content: "";
+  position: absolute;
+  top: 48rpx;
+  width: 24rpx;
+  height: 34rpx;
+  border: 5rpx solid #17395e;
+  background: #8bdcff;
+}
+
+.mascot .helmet::before {
+  left: -24rpx;
+  border-radius: 24rpx 0 0 24rpx;
+}
+
+.mascot .helmet::after {
+  right: -24rpx;
+  border-radius: 0 24rpx 24rpx 0;
+}
+
+.mascot .face {
+  position: absolute;
+  left: 42rpx;
+  top: 58rpx;
+  width: 64rpx;
+  height: 62rpx;
+  border-radius: 28rpx;
+  border: 4rpx solid #17395e;
+  background: #fff9ed;
+}
+
+.mascot .face::before {
+  content: "";
+  position: absolute;
+  left: 16rpx;
+  top: 25rpx;
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: #17395e;
+  box-shadow: 27rpx 0 0 #17395e;
+}
+
+.mascot .face::after {
+  content: "";
+  position: absolute;
+  left: 24rpx;
+  top: 42rpx;
+  width: 18rpx;
+  height: 8rpx;
+  border-bottom: 4rpx solid #17395e;
+  border-radius: 0 0 18rpx 18rpx;
+}
+
+.mascot .body {
+  position: absolute;
+  left: 24rpx;
+  bottom: 0;
+  width: 100rpx;
+  height: 56rpx;
+  border: 5rpx solid #17395e;
+  background: #bff8e9;
+  clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%);
+}
+
+.input-card {
+  padding: 26rpx;
+}
+
+textarea {
+  width: 100%;
+  height: 220rpx;
+  color: #102138;
+  font-size: 27rpx;
+  line-height: 1.65;
+}
+
+.quick-row,
+.option-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.quick-chip,
+.pill {
+  min-width: 132rpx;
+  height: 60rpx;
+  padding: 0 20rpx;
+  border-radius: 14rpx;
+  border: 2rpx solid rgba(47, 125, 241, 0.20);
+  color: #315171;
+  background: rgba(255, 255, 255, 0.76);
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.pill.active {
+  color: #0f4fa5;
+  background: #e7f3ff;
+  border-color: rgba(47, 125, 241, 0.44);
+}
+
+.flow-card {
+  padding: 22rpx;
+}
+
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 18rpx;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid rgba(47, 125, 241, 0.08);
+}
+
+.flow-step:last-child {
+  border-bottom: 0;
+}
+
+.flow-step > text {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2f7df1;
+  background: #ecf7ff;
+  font-weight: 900;
+}
+
+.flow-step view text:first-child {
+  display: block;
+  color: #14345c;
+  font-weight: 900;
+  margin-bottom: 6rpx;
+}
+
+.start-btn {
+  margin-top: 34rpx;
+}

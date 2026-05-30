@@ -1,0 +1,47 @@
+<view class="page generating-page">
+  <view class="brand-row">
+    <view class="brand"><view class="brand-mark"></view><text>知识跃迁</text></view>
+    <text class="tag">AI 引擎在线</text>
+  </view>
+
+  <view class="card hero">
+    <text class="tag">结构化出题</text>
+    <view class="hero-title">正在把知识压缩成关卡</view>
+    <view class="hero-subtitle">系统正在提炼考点、生成选项并校验答案结构。</view>
+  </view>
+
+  <view class="scan-card">
+    <view class="scan-ring">
+      <view class="scan-core">
+        <text>{{progress}}</text>
+        <text>生成进度</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card log-card">
+    <block wx:for="{{steps}}" wx:key="title">
+      <view class="log-item">
+        <view class="log-dot {{item.done ? 'done' : ''}}">{{item.done ? '✓' : item.index}}</view>
+        <view class="log-copy">
+          <text>{{item.title}}</text>
+          <text>{{item.desc}}</text>
+        </view>
+        <text class="tag {{item.done ? 'mint' : ''}}">{{item.done ? '完成' : '进行中'}}</text>
+      </view>
+    </block>
+    <view class="progress-track">
+      <view class="progress-bar" style="width: {{progress}}%;"></view>
+    </view>
+  </view>
+
+  <view class="guide card">
+    <view class="guide-avatar"><view></view></view>
+    <view>
+      <text>领航员提示</text>
+      <text>这是本地 Mock AI 闭环。后续接真实模型时，只替换 services 层即可。</text>
+    </view>
+  </view>
+
+  <button class="secondary-btn" bindtap="backHome">返回重新输入</button>
+</view>

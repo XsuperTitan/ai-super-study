@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/generating/generating",
+    "pages/quiz/quiz",
+    "pages/report/report"
+  ],
+  "window": {
+    "navigationBarTitleText": "星轨学习舱",
+    "navigationBarBackgroundColor": "#f6fbff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#eef7ff",
+    "backgroundTextStyle": "dark"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

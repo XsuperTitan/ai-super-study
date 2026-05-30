@@ -1,0 +1,74 @@
+<view class="screen">
+  <view class="hero-card" wx:if="{{report}}">
+    <view class="orbit-mark">
+      <view class="orbit-ring"></view>
+      <view class="orbit-core">{{report.grade}}</view>
+    </view>
+    <view class="hero-copy">
+      <view class="eyebrow">MISSION REPORT</view>
+      <view class="title">本次闯关完成</view>
+      <view class="subtitle">{{report.summary}}</view>
+    </view>
+  </view>
+
+  <view class="stats-grid" wx:if="{{report}}">
+    <view class="stat-card">
+      <text class="stat-value">{{report.score}}</text>
+      <text class="stat-label">得分</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{report.accuracy}}%</text>
+      <text class="stat-label">正确率</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{report.correctCount}}/{{report.total}}</text>
+      <text class="stat-label">答对</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{durationText}}</text>
+      <text class="stat-label">用时</text>
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{report}}">
+    <view class="section-title">
+      <text>知识掌握图谱</text>
+      <text class="hud-label">AUTO ANALYSIS</text>
+    </view>
+    <view class="map-item" wx:for="{{knowledgeMap}}" wx:key="name">
+      <view class="map-row">
+        <text class="map-name">{{item.name}}</text>
+        <text class="map-value">{{item.value}}%</text>
+      </view>
+      <view class="map-track">
+        <view class="map-fill {{item.className}}" style="width: {{item.value}}%;"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{report}}">
+    <view class="section-title">
+      <text>薄弱点</text>
+      <text class="hud-label warn">REVIEW</text>
+    </view>
+    <view class="weak-card" wx:for="{{weakPoints}}" wx:key="*this">
+      <view class="weak-dot"></view>
+      <text>{{item}}</text>
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{report}}">
+    <view class="section-title">
+      <text>复习建议</text>
+      <text class="hud-label gold">NEXT</text>
+    </view>
+    <view class="advice-card" wx:for="{{report.reviewAdvice}}" wx:key="*this">
+      <text>{{item}}</text>
+    </view>
+  </view>
+
+  <view class="action-bar" wx:if="{{report}}">
+    <button class="primary-btn" bindtap="restart">再来一轮</button>
+    <button class="secondary-btn" open-type="share">分享战报</button>
+  </view>
+</view>
