@@ -28,10 +28,15 @@ def test_generate_quiz_success():
     assert response.status_code == 200
     assert body["success"] is True
     quiz = body["data"]["quiz"]
+    assert body["data"]["provider"] == "mock"
+    assert "fallbackReason" in body["data"]
     assert quiz["questionCount"] == 3
     assert len(quiz["questions"]) == 3
     for question in quiz["questions"]:
         assert question["answer"] in {option["id"] for option in question["options"]}
+        assert question["knowledgePoint"]
+        assert question["sourceTrace"]
+        assert question["relevanceReason"]
 
 
 def test_generate_quiz_accepts_short_topic():
@@ -49,6 +54,47 @@ def test_generate_quiz_accepts_short_topic():
     assert response.status_code == 200
     assert body["success"] is True
     assert body["data"]["quiz"]["questionCount"] == 3
+    for question in body["data"]["quiz"]["questions"]:
+        assert question["knowledgePoint"]
+        assert question["sourceTrace"]
+        assert "RAG" in question["relevanceReason"]
+
+
+def test_generate_quiz_accepts_any_interest_topic():
+    response = client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "sourceType": "text",
+            "content": "AI",
+            "questionCount": 3,
+            "questionTypes": ["single_choice", "true_false"],
+            "difficulty": "normal",
+        },
+    )
+    body = response.json()
+    assert response.status_code == 200
+    assert body["success"] is True
+    for question in body["data"]["quiz"]["questions"]:
+        assert question["knowledgePoint"]
+        assert question["sourceTrace"] == "基于用户输入主题：AI"
+        assert "AI" in question["relevanceReason"]
+
+
+def test_generate_quiz_accepts_non_fixed_short_topic():
+    response = client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "sourceType": "text",
+            "content": "经济学",
+            "questionCount": 3,
+            "questionTypes": ["single_choice", "true_false"],
+            "difficulty": "normal",
+        },
+    )
+    body = response.json()
+    assert response.status_code == 200
+    assert body["success"] is True
+    assert body["data"]["quiz"]["questions"][0]["sourceTrace"] == "基于用户输入主题：经济学"
 
 
 def test_generate_quiz_rejects_too_short_content():

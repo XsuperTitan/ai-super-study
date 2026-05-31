@@ -15,11 +15,22 @@ def _excerpt(text: str, size: int = 64) -> str:
     return text[:size] + ("..." if len(text) > size else "")
 
 
+def _trace(source: NormalizedSource) -> str:
+    return f"基于用户输入主题：{source.content}" if source.input_mode == "topic" else _excerpt(source.content)
+
+
 class MockModelAdapter(ModelAdapter):
+    provider_name = "mock"
+
     def generate_quiz(self, source: NormalizedSource, request: GenerateQuizRequest) -> Quiz:
-        excerpt = _excerpt(source.content)
+        trace = _trace(source)
         concept = source.title.replace("...", "")
         is_topic = source.input_mode == "topic"
+        reason = (
+            f"题目围绕用户想学习的「{concept}」展开，用于确认基础概念和应用边界。"
+            if is_topic
+            else "题目从用户输入内容中提炼考点，用于检查是否理解原文核心观点。"
+        )
         templates = [
             Question(
                 id="q1",
@@ -33,42 +44,70 @@ class MockModelAdapter(ModelAdapter):
                 ],
                 answer="B",
                 explanation="本题考察对输入内容的整体理解。真正目标是帮助你发现自己是否理解。",
-                sourceTrace=excerpt,
+                sourceTrace=trace,
+                knowledgePoint=f"{concept}的核心概念",
+                relevanceReason=reason,
                 difficulty=request.difficulty,
             ),
             Question(
                 id="q2",
                 type="true_false",
-                stem="判断：如果能把一个概念讲清楚，通常说明你对它的理解更稳定。",
+                stem=(
+                    f"判断：学习「{concept}」时，只记住名称就足够，不需要了解它的应用场景和边界。"
+                    if is_topic
+                    else "判断：如果能把一个概念讲清楚，通常说明你对它的理解更稳定。"
+                ),
                 options=[Option(id="A", text="正确"), Option(id="B", text="错误")],
-                answer="A",
-                explanation="表达是检验理解的一种方式。讲不清楚的地方，往往就是知识漏洞。",
-                sourceTrace=excerpt,
+                answer="B" if is_topic else "A",
+                explanation=(
+                    f"学习「{concept}」不能停在名称层面，还需要理解它解决什么问题、适合什么场景以及有什么限制。"
+                    if is_topic
+                    else "表达是检验理解的一种方式。讲不清楚的地方，往往就是知识漏洞。"
+                ),
+                sourceTrace=trace,
+                knowledgePoint=f"{concept}的理解检验",
+                relevanceReason=reason,
                 difficulty=request.difficulty,
             ),
             Question(
                 id="q3",
                 type="single_choice",
-                stem="完成这段内容的学习后，最推荐的复习动作是什么？",
+                stem=f"如果想确认自己真的理解「{concept}」，最有效的自测问题是什么？" if is_topic else "完成这段内容的学习后，最推荐的复习动作是什么？",
                 options=[
-                    Option(id="A", text="立刻关闭页面，等待下次再看"),
-                    Option(id="B", text="把核心观点改写成自己的例子"),
-                    Option(id="C", text="只重复阅读第一句话"),
-                    Option(id="D", text="只收藏，不进行任何输出"),
+                    Option(id="A", text=f"我能否说明「{concept}」是什么、能做什么和不能做什么" if is_topic else "立刻关闭页面，等待下次再看"),
+                    Option(id="B", text="只记住这个词的拼写" if is_topic else "把核心观点改写成自己的例子"),
+                    Option(id="C", text="只看别人给出的结论，不尝试解释" if is_topic else "只重复阅读第一句话"),
+                    Option(id="D", text="完全不关心它的实际使用场景" if is_topic else "只收藏，不进行任何输出"),
                 ],
-                answer="B",
-                explanation="将知识迁移到自己的例子里，可以从“看懂”推进到“会用”。",
-                sourceTrace=excerpt,
+                answer="A" if is_topic else "B",
+                explanation=(
+                    f"能解释「{concept}」的定义、能力边界和使用场景，才说明你不是只记住了词。"
+                    if is_topic
+                    else "将知识迁移到自己的例子里，可以从“看懂”推进到“会用”。"
+                ),
+                sourceTrace=trace,
+                knowledgePoint=f"{concept}的复习迁移",
+                relevanceReason=reason,
                 difficulty=request.difficulty,
             ),
             Question(
                 id="q4",
                 type="true_false",
-                stem="判断：AI 生成的题目只需要看分数，不需要阅读解析。",
+                stem=(
+                    f"判断：学习「{concept}」时，结合例子理解通常比只背抽象定义更可靠。"
+                    if is_topic
+                    else "判断：AI 生成的题目只需要看分数，不需要阅读解析。"
+                ),
                 options=[Option(id="A", text="正确"), Option(id="B", text="错误")],
-                answer="B",
-                explanation="解析用于补齐理解链路。答对也值得看解析，因为它能帮助你确认思路是否稳定。",
-                sourceTrace=excerpt,
+                answer="A" if is_topic else "B",
+                explanation=(
+                    f"例子能帮助你把「{concept}」从名词变成可理解、可判断、可应用的知识。"
+                    if is_topic
+                    else "解析用于补齐理解链路。答对也值得看解析，因为它能帮助你确认思路是否稳定。"
+                ),
+                sourceTrace=trace,
+                knowledgePoint=f"{concept}的错题复盘",
+                relevanceReason=reason,
                 difficulty=request.difficulty,
             ),
             Question(
@@ -83,7 +122,9 @@ class MockModelAdapter(ModelAdapter):
                 ],
                 answer="A",
                 explanation="真实场景会逼迫你重新组织知识，能更快发现概念边界和误区。",
-                sourceTrace=excerpt,
+                sourceTrace=trace,
+                knowledgePoint=f"{concept}的应用场景",
+                relevanceReason=reason,
                 difficulty=request.difficulty,
             ),
         ]

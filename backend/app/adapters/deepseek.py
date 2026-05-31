@@ -12,6 +12,8 @@ from app.services.text_normalizer import NormalizedSource
 
 
 class DeepSeekAdapter(ModelAdapter):
+    provider_name = "deepseek"
+
     def __init__(self, settings: Settings):
         if not settings.deepseek_api_key:
             raise ModelAdapterError("DEEPSEEK_API_KEY is not configured")
@@ -87,6 +89,8 @@ def _quiz_system_prompt(question_count: int, question_types: list[str], input_mo
       "answer": "A",
       "explanation": "解析",
       "sourceTrace": "原文追溯片段",
+      "knowledgePoint": "本题考察的知识点",
+      "relevanceReason": "说明本题为什么和用户输入的主题或内容相关",
       "difficulty": "normal"
     }}
   ],
@@ -98,7 +102,9 @@ def _quiz_system_prompt(question_count: int, question_types: list[str], input_mo
 - single_choice 必须有 A/B/C/D 四个选项。
 - true_false 必须有 A=正确、B=错误两个选项。
 - answer 必须命中某个 options.id。
-- explanation 和 sourceTrace 不能为空。
+- explanation、sourceTrace、knowledgePoint、relevanceReason 不能为空。
+- 短主题输入时，sourceTrace 写成“基于用户输入主题：xxx”，relevanceReason 必须明确说明题目和该主题的关系。
+- 长内容输入时，sourceTrace 尽量引用或概括用户输入中的依据片段，relevanceReason 必须说明题目来自输入内容中的哪个考点。
 """
 
 

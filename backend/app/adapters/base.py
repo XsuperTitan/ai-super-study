@@ -7,6 +7,8 @@ from app.services.text_normalizer import NormalizedSource
 
 
 class ModelAdapter(ABC):
+    provider_name = "unknown"
+
     @abstractmethod
     def generate_quiz(self, source: NormalizedSource, request: GenerateQuizRequest) -> Quiz:
         raise NotImplementedError

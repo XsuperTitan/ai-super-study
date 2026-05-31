@@ -1,7 +1,7 @@
 <view class="page quiz-page">
   <view class="brand-row">
     <view class="brand"><view class="brand-mark"></view><text>第 {{currentNumber}} 关</text></view>
-    <text class="tag gold">标准难度</text>
+    <text class="tag gold">{{modelProviderLabel}}</text>
   </view>
 
   <view class="topline">
@@ -20,6 +20,7 @@
   <view class="question-card card">
     <text class="tag">{{currentQuestion.typeLabel}}</text>
     <view class="question-stem">{{currentQuestion.stem}}</view>
+    <view wx:if="{{currentQuestion.knowledgePoint}}" class="knowledge-point">考察点：{{currentQuestion.knowledgePoint}}</view>
     <view class="trace">考点追溯：{{currentQuestion.sourceTrace}}</view>
   </view>
 

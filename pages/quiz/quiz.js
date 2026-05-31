@@ -12,7 +12,8 @@ Page({
     selectedOption: '',
     submitted: false,
     isCorrect: false,
-    isLast: false
+    isLast: false,
+    modelProviderLabel: ''
   },
 
   onLoad() {
@@ -22,7 +23,11 @@ Page({
       return;
     }
     this.startedAt = Date.now();
-    this.setData({ quiz, total: quiz.questions.length }, () => this.syncQuestion());
+    this.setData({
+      quiz,
+      total: quiz.questions.length,
+      modelProviderLabel: formatProviderLabel(quiz)
+    }, () => this.syncQuestion());
   },
 
   syncQuestion() {
@@ -99,3 +104,10 @@ Page({
     wx.redirectTo({ url: '/pages/index/index' });
   }
 });
+
+function formatProviderLabel(quiz) {
+  if (!quiz || !quiz.modelProvider) return 'AI 引擎';
+  if (quiz.modelProvider === 'deepseek') return 'DeepSeek';
+  if (quiz.modelProvider === 'mock') return quiz.fallbackReason ? 'Mock 兜底' : 'Mock';
+  return quiz.modelProvider;
+}

@@ -51,14 +51,23 @@ def health():
 
 @app.post("/api/v1/quiz/generate")
 def generate_quiz(payload: GenerateQuizRequest, request: Request):
-    service = QuizService(create_adapter(settings))
-    quiz = service.generate_quiz(payload)
-    return _ok(request, {"quiz": quiz.model_dump(mode="json")})
+    selection = create_adapter(settings)
+    service = QuizService(selection.adapter, selection.fallback_reason)
+    result = service.generate_quiz(payload)
+    return _ok(
+        request,
+        {
+            "quiz": result.quiz.model_dump(mode="json"),
+            "provider": result.provider,
+            "fallbackReason": result.fallback_reason,
+        },
+    )
 
 
 @app.post("/api/v1/reports/generate")
 def generate_report(payload: GenerateReportRequest, request: Request):
-    service = ReportService(create_adapter(settings))
+    selection = create_adapter(settings)
+    service = ReportService(selection.adapter)
     report = service.generate_report(payload)
     return _ok(request, {"report": report.model_dump(mode="json")})
 

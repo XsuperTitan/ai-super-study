@@ -65,7 +65,12 @@ function generateQuiz(source) {
     questionCount: source && source.questionCount === 5 ? 5 : 3,
     questionTypes: ['single_choice', 'true_false'],
     difficulty: 'normal'
-  }).then(data => data.quiz);
+  }).then(data => {
+    const quiz = data.quiz || {};
+    quiz.modelProvider = data.provider || 'unknown';
+    quiz.fallbackReason = data.fallbackReason || '';
+    return quiz;
+  });
 }
 
 function generateReport(quiz, answers) {

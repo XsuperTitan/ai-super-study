@@ -41,6 +41,8 @@ class Question(BaseModel):
     answer: str = Field(min_length=1)
     explanation: str = Field(min_length=1)
     sourceTrace: str = ""
+    knowledgePoint: str = ""
+    relevanceReason: str = ""
     difficulty: Difficulty = "normal"
 
     @model_validator(mode="after")

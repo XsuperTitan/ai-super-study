@@ -85,6 +85,18 @@
   line-height: 1.5;
 }
 
+.knowledge-point {
+  margin-top: 20rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 14rpx;
+  color: #08779a;
+  background: rgba(234, 255, 255, 0.86);
+  border: 2rpx solid rgba(46, 255, 233, 0.18);
+  font-size: 23rpx;
+  line-height: 1.5;
+  font-weight: 800;
+}
+
 .options {
   width: 100%;
   box-sizing: border-box;

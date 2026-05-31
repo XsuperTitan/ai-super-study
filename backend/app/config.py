@@ -16,7 +16,7 @@ class Settings:
 
 
 def load_settings() -> Settings:
-    load_dotenv()
+    load_dotenv(encoding="utf-8-sig")
     origins = os.getenv("BACKEND_CORS_ORIGINS", "*")
     return Settings(
         ai_provider=os.getenv("AI_PROVIDER", "mock").strip().lower() or "mock",
