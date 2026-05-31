@@ -70,6 +70,7 @@
 
   <view class="action-bar" wx:if="{{report}}">
     <button class="primary-btn" bindtap="restart">再来一轮</button>
-    <button class="secondary-btn" open-type="share">分享战报</button>
+    <button class="secondary-btn" bindtap="openHistory">查看历史</button>
+    <button class="secondary-btn span-2" open-type="share">分享战报</button>
   </view>
 </view>

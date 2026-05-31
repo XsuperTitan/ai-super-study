@@ -291,6 +291,10 @@
   margin-top: 28rpx;
 }
 
+.action-bar .span-2 {
+  grid-column: span 2;
+}
+
 .primary-btn,
 .secondary-btn {
   height: 92rpx;

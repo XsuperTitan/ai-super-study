@@ -73,6 +73,7 @@ Page({
           this.setData({ progress: 100, steps, failed: false, errorMessage: '' });
           wx.setStorageSync(api.QUIZ_KEY, quiz);
           wx.setStorageSync(api.ANSWERS_KEY, []);
+          wx.removeStorageSync(api.REPORT_KEY);
           this.timer = setTimeout(() => {
             wx.redirectTo({ url: '/pages/quiz/quiz' });
           }, 420);

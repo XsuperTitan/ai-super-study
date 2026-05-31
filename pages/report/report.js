@@ -1,4 +1,5 @@
 const api = require('../../services/api');
+const history = require('../../services/history');
 
 function formatDuration(seconds) {
   const safeSeconds = Math.max(0, Number(seconds) || 0);
@@ -19,29 +20,25 @@ Page({
   onLoad() {
     const quiz = wx.getStorageSync(api.QUIZ_KEY);
     const answers = wx.getStorageSync(api.ANSWERS_KEY) || [];
+    const source = wx.getStorageSync(api.SOURCE_KEY) || {};
+    const cachedReport = wx.getStorageSync(api.REPORT_KEY);
 
     if (!quiz || !quiz.questions) {
       wx.redirectTo({ url: '/pages/index/index' });
       return;
     }
 
+    if (cachedReport && cachedReport.quizId === quiz.quizId) {
+      history.saveStudyHistory({ source, quiz, answers, report: cachedReport });
+      this.displayReport(quiz, cachedReport);
+      return;
+    }
+
     api.generateReport(quiz, answers)
       .then(report => {
         wx.setStorageSync(api.REPORT_KEY, report);
-
-        const knowledgeMap = report.knowledgeMap.map((item) => ({
-          ...item,
-          name: item.topic,
-          className: item.mastery === 'weak' ? 'weak' : item.mastery === 'good' ? 'good' : 'normal'
-        }));
-
-        this.setData({
-          quiz,
-          report,
-          durationText: formatDuration(report.duration),
-          knowledgeMap,
-          weakPoints: report.weakPoints
-        });
+        history.saveStudyHistory({ source, quiz, answers, report });
+        this.displayReport(quiz, report);
       })
       .catch(error => {
         wx.showModal({
@@ -53,11 +50,31 @@ Page({
       });
   },
 
+  displayReport(quiz, report) {
+    const knowledgeMap = (report.knowledgeMap || []).map((item) => ({
+      ...item,
+      name: item.topic,
+      className: item.mastery === 'weak' ? 'weak' : item.mastery === 'good' ? 'good' : 'normal'
+    }));
+
+    this.setData({
+      quiz,
+      report,
+      durationText: formatDuration(report.duration),
+      knowledgeMap,
+      weakPoints: report.weakPoints || []
+    });
+  },
+
   restart() {
     wx.removeStorageSync(api.QUIZ_KEY);
     wx.removeStorageSync(api.ANSWERS_KEY);
     wx.removeStorageSync(api.REPORT_KEY);
     wx.redirectTo({ url: '/pages/index/index' });
+  },
+
+  openHistory() {
+    wx.navigateTo({ url: '/pages/history/history' });
   },
 
   onShareAppMessage() {

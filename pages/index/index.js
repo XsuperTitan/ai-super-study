@@ -53,5 +53,9 @@ Page({
       createdAt: Date.now()
     });
     wx.navigateTo({ url: '/pages/generating/generating' });
+  },
+
+  openHistory() {
+    wx.navigateTo({ url: '/pages/history/history' });
   }
 });

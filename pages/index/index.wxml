@@ -61,5 +61,6 @@
   </view>
 
   <button class="primary-btn start-btn" disabled="{{!canStart}}" bindtap="startGenerate">启动知识跃迁</button>
+  <button class="secondary-btn history-btn" bindtap="openHistory">查看历史记录</button>
   <view class="safe-bottom"></view>
 </view>

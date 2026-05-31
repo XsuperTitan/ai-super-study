@@ -3,7 +3,8 @@
     "pages/index/index",
     "pages/generating/generating",
     "pages/quiz/quiz",
-    "pages/report/report"
+    "pages/report/report",
+    "pages/history/history"
   ],
   "window": {
     "navigationBarTitleText": "星轨学习舱",

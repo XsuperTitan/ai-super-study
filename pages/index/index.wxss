@@ -179,3 +179,7 @@ textarea {
 .start-btn {
   margin-top: 34rpx;
 }
+
+.history-btn {
+  margin-top: 18rpx;
+}

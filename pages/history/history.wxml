@@ -1,0 +1,46 @@
+<view class="page history-page">
+  <view class="brand-row">
+    <view class="brand"><view class="brand-mark"></view><text>历史记录</text></view>
+    <text class="tag gold">LOCAL CACHE</text>
+  </view>
+
+  <view class="hero card">
+    <text class="tag">学习轨迹</text>
+    <view class="hero-title">最近 10 次知识闯关</view>
+    <view class="hero-subtitle">这些记录只保存在当前设备，后续会迁移到数据库和账号体系。</view>
+    <image class="hero-character" src="/assets/characters/silver-analyst.svg" mode="aspectFit" />
+  </view>
+
+  <view class="history-actions" wx:if="{{hasHistory}}">
+    <button class="secondary-btn" bindtap="backHome">返回首页</button>
+    <button class="danger-btn" bindtap="clearAll">清空历史</button>
+  </view>
+
+  <view wx:if="{{!hasHistory}}" class="empty card">
+    <image class="empty-character" src="/assets/characters/cyan-idol.svg" mode="aspectFit" />
+    <view>
+      <text>还没有学习记录</text>
+      <text>完成一次闯关报告后，这里会自动保存最近记录。</text>
+    </view>
+    <button class="primary-btn" bindtap="backHome">开始学习</button>
+  </view>
+
+  <view wx:else class="history-list">
+    <block wx:for="{{records}}" wx:key="historyId">
+      <view class="history-card card" bindtap="openRecord" data-id="{{item.historyId}}">
+        <view class="history-head">
+          <text>{{item.title}}</text>
+          <text class="tag">{{item.providerText}}</text>
+        </view>
+        <view class="history-source">{{item.sourcePreview}}</view>
+        <view class="history-meta">
+          <text>{{item.timeText}}</text>
+          <text>{{item.questionText}}</text>
+          <text>正确率 {{item.accuracy}}%</text>
+          <text>得分 {{item.score}}</text>
+        </view>
+        <button class="delete-btn" catchtap="deleteRecord" data-id="{{item.historyId}}">删除</button>
+      </view>
+    </block>
+  </view>
+</view>
