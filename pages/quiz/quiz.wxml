@@ -13,7 +13,7 @@
   </view>
 
   <view class="coach card">
-    <view class="coach-avatar"><view></view></view>
+    <image class="coach-avatar" src="/assets/characters/cyan-idol.svg" mode="aspectFit" />
     <text>{{submitted ? '看完解析后再进入下一关，吸收会更稳。' : '先判断题目问的是什么，再看选项。'}}</text>
   </view>
 

@@ -1,4 +1,4 @@
-const ai = require('../../services/mock-ai');
+const api = require('../../services/api');
 
 Page({
   data: {
@@ -16,7 +16,7 @@ Page({
   },
 
   onLoad() {
-    const quiz = wx.getStorageSync(ai.QUIZ_KEY);
+    const quiz = wx.getStorageSync(api.QUIZ_KEY);
     if (!quiz || !quiz.questions || !quiz.questions.length) {
       wx.redirectTo({ url: '/pages/index/index' });
       return;
@@ -70,14 +70,14 @@ Page({
       return { id: option.id, text: option.text, className };
     });
 
-    const answers = wx.getStorageSync(ai.ANSWERS_KEY) || [];
+    const answers = wx.getStorageSync(api.ANSWERS_KEY) || [];
     answers.push({
       questionId: question.id,
       selectedOption: this.data.selectedOption,
       isCorrect,
       duration: Math.max(1, Math.round((Date.now() - this.startedAt) / 1000))
     });
-    wx.setStorageSync(ai.ANSWERS_KEY, answers);
+    wx.setStorageSync(api.ANSWERS_KEY, answers);
 
     this.setData({
       submitted: true,

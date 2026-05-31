@@ -24,14 +24,14 @@
 .progress-track {
   height: 16rpx;
   border-radius: 20rpx;
-  background: rgba(47, 125, 241, 0.11);
+  background: rgba(46, 255, 233, 0.11);
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #2f7df1, #69c8ff, #c7922e);
+  background: linear-gradient(90deg, #2effe9, #d4ff4a, #ff7bd5);
 }
 
 .coach {
@@ -40,33 +40,19 @@
   gap: 16rpx;
   margin: 26rpx 0;
   padding: 18rpx;
-  background: rgba(255, 248, 226, 0.78);
-  border-color: rgba(199, 146, 46, 0.22);
+  border-color: rgba(212, 255, 74, 0.28);
+  background: rgba(255, 255, 244, 0.78);
 }
 
 .coach-avatar {
-  width: 58rpx;
-  height: 68rpx;
-  border-radius: 28rpx 28rpx 18rpx 18rpx;
-  border: 4rpx solid #17395e;
-  background: #eef9ff;
-  position: relative;
+  width: 76rpx;
+  height: 94rpx;
   flex: 0 0 auto;
-}
-
-.coach-avatar view {
-  position: absolute;
-  left: 13rpx;
-  top: 25rpx;
-  width: 28rpx;
-  height: 28rpx;
-  border-radius: 50%;
-  border: 3rpx solid #17395e;
-  background: #fff9ed;
+  filter: drop-shadow(0 10rpx 12rpx rgba(46, 255, 233, 0.14));
 }
 
 .coach text {
-  color: #75500f;
+  color: #6d520b;
   font-size: 23rpx;
   line-height: 1.55;
   font-weight: 800;
@@ -74,6 +60,10 @@
 
 .question-card {
   padding: 30rpx;
+  border-color: rgba(46, 255, 233, 0.32);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(240, 254, 255, 0.82)),
+    #ffffff;
 }
 
 .question-stem {
@@ -89,57 +79,79 @@
   padding: 16rpx;
   border-radius: 14rpx;
   color: #45627e;
-  background: #f1f6ff;
-  border: 2rpx solid rgba(47, 125, 241, 0.12);
+  background: rgba(246, 250, 255, 0.86);
+  border: 2rpx solid rgba(255, 45, 171, 0.12);
   font-size: 23rpx;
   line-height: 1.5;
 }
 
 .options {
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 18rpx;
   margin-top: 24rpx;
 }
 
 .option {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 100%;
+  max-width: none;
   min-height: 104rpx;
-  padding: 18rpx;
+  padding: 20rpx 24rpx;
+  margin-left: 0;
+  margin-right: 0;
   border-radius: 18rpx;
-  border: 2rpx solid rgba(47, 125, 241, 0.14);
-  background: rgba(255, 255, 255, 0.78);
-  display: flex;
+  border: 2rpx solid rgba(46, 255, 233, 0.18);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 45, 171, 0.05);
+  display: flex !important;
   align-items: center;
   gap: 18rpx;
   text-align: left;
+  justify-content: flex-start;
+  align-self: stretch;
+  line-height: 1.45;
 }
 
 .option text:first-child {
   width: 54rpx;
   height: 54rpx;
+  flex: 0 0 auto;
   border-radius: 16rpx;
-  color: #2f7df1;
-  background: #ecf7ff;
+  color: #08779a;
+  background: #eaffff;
+  border: 2rpx solid rgba(46, 255, 233, 0.22);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  flex: 0 0 auto;
 }
 
 .option text:last-child {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  display: block;
   color: #24445f;
   font-size: 26rpx;
   line-height: 1.45;
+  text-align: left;
 }
 
 .option.selected {
-  border-color: rgba(47, 125, 241, 0.50);
-  background: #eef8ff;
+  border-color: rgba(46, 255, 233, 0.56);
+  background: #eefeff;
+  box-shadow:
+    inset 0 0 0 1rpx rgba(255, 255, 255, 0.72),
+    0 0 22rpx rgba(46, 255, 233, 0.12);
 }
 
 .option.correct {
-  border-color: rgba(24, 169, 133, 0.42);
+  border-color: rgba(24, 215, 186, 0.42);
   background: #e2fff7;
 }
 
@@ -151,11 +163,12 @@
 .analysis {
   margin-top: 24rpx;
   padding: 24rpx;
+  border-color: rgba(24, 215, 186, 0.26);
 }
 
 .analysis text {
   display: block;
-  color: #66758c;
+  color: #5e6f86;
   font-size: 25rpx;
   line-height: 1.65;
 }

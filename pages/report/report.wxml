@@ -1,5 +1,6 @@
 <view class="screen">
   <view class="hero-card" wx:if="{{report}}">
+    <image class="report-character" src="/assets/characters/silver-analyst.svg" mode="aspectFit" />
     <view class="orbit-mark">
       <view class="orbit-ring"></view>
       <view class="orbit-core">{{report.grade}}</view>

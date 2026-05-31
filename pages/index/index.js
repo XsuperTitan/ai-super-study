@@ -1,9 +1,10 @@
-const ai = require('../../services/mock-ai');
+const api = require('../../services/api');
 
 const examples = [
-  '费曼学习法强调用自己的话解释一个概念，通过简单表达暴露理解漏洞，再回到资料中修正，最后用例子迁移应用。',
-  '碎片化学习适合把零散时间用于短内容吸收，但需要及时复盘和自测，否则知识容易停留在看过但不会用的状态。',
-  '复利思维说明微小改进在长期会形成巨大差异。关键不是一次性爆发，而是持续积累、减少损耗并保持方向正确。'
+  'RAG',
+  '向量数据库',
+  '费曼学习法',
+  'RAG是AI的检索增强引擎'
 ];
 
 Page({
@@ -19,7 +20,7 @@ Page({
     this.setData({
       content,
       contentLength: content.length,
-      canStart: content.trim().length >= 10
+      canStart: content.trim().length >= api.MIN_SOURCE_LENGTH
     });
   },
 
@@ -40,13 +41,13 @@ Page({
   },
 
   startGenerate() {
-    const content = ai.normalizeSource(this.data.content);
-    if (content.length < 10) {
-      wx.showToast({ title: '至少输入 10 个字', icon: 'none' });
+    const content = api.normalizeSource(this.data.content);
+    if (content.length < api.MIN_SOURCE_LENGTH) {
+      wx.showToast({ title: '至少输入 2 个有效字符', icon: 'none' });
       return;
     }
 
-    wx.setStorageSync(ai.SOURCE_KEY, {
+    wx.setStorageSync(api.SOURCE_KEY, {
       content,
       questionCount: this.data.questionCount,
       createdAt: Date.now()

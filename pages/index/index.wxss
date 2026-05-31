@@ -1,5 +1,5 @@
 .hero {
-  min-height: 268rpx;
+  min-height: 312rpx;
   padding: 34rpx;
 }
 
@@ -13,106 +13,78 @@
 }
 
 .hero-subtitle {
-  width: 440rpx;
+  width: 392rpx;
   margin-top: 16rpx;
-  color: #66758c;
+  color: #5e6f86;
   font-size: 25rpx;
   line-height: 1.7;
 }
 
-.mascot {
+.character {
+  display: block;
+}
+
+.hero-character {
   position: absolute;
-  right: 34rpx;
-  top: 72rpx;
-  width: 148rpx;
-  height: 176rpx;
+  right: 14rpx;
+  bottom: -8rpx;
+  width: 210rpx;
+  height: 276rpx;
+  filter: drop-shadow(0 22rpx 26rpx rgba(46, 255, 233, 0.18));
+  z-index: 2;
 }
 
-.mascot .helmet {
+.hero-orbit {
   position: absolute;
-  left: 26rpx;
-  top: 0;
-  width: 96rpx;
-  height: 120rpx;
-  border-radius: 52rpx 52rpx 42rpx 42rpx;
-  border: 5rpx solid #17395e;
-  background: #eef9ff;
-}
-
-.mascot .helmet::before,
-.mascot .helmet::after {
-  content: "";
-  position: absolute;
-  top: 48rpx;
-  width: 24rpx;
-  height: 34rpx;
-  border: 5rpx solid #17395e;
-  background: #8bdcff;
-}
-
-.mascot .helmet::before {
-  left: -24rpx;
-  border-radius: 24rpx 0 0 24rpx;
-}
-
-.mascot .helmet::after {
-  right: -24rpx;
-  border-radius: 0 24rpx 24rpx 0;
-}
-
-.mascot .face {
-  position: absolute;
-  left: 42rpx;
-  top: 58rpx;
-  width: 64rpx;
-  height: 62rpx;
-  border-radius: 28rpx;
-  border: 4rpx solid #17395e;
-  background: #fff9ed;
-}
-
-.mascot .face::before {
-  content: "";
-  position: absolute;
-  left: 16rpx;
-  top: 25rpx;
-  width: 6rpx;
-  height: 6rpx;
+  right: -34rpx;
+  top: 30rpx;
+  width: 240rpx;
+  height: 240rpx;
+  border: 2rpx solid rgba(46, 255, 233, 0.28);
   border-radius: 50%;
-  background: #17395e;
-  box-shadow: 27rpx 0 0 #17395e;
+  box-shadow:
+    inset 0 0 34rpx rgba(255, 45, 171, 0.08),
+    0 0 38rpx rgba(46, 255, 233, 0.08);
 }
 
-.mascot .face::after {
+.hero-orbit::after {
   content: "";
   position: absolute;
-  left: 24rpx;
-  top: 42rpx;
-  width: 18rpx;
-  height: 8rpx;
-  border-bottom: 4rpx solid #17395e;
-  border-radius: 0 0 18rpx 18rpx;
-}
-
-.mascot .body {
-  position: absolute;
-  left: 24rpx;
-  bottom: 0;
-  width: 100rpx;
-  height: 56rpx;
-  border: 5rpx solid #17395e;
-  background: #bff8e9;
-  clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%);
+  left: 22rpx;
+  top: 44rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: #d4ff4a;
+  box-shadow: 0 0 18rpx rgba(212, 255, 74, 0.44);
 }
 
 .input-card {
-  padding: 26rpx;
+  padding: 24rpx;
+}
+
+.input-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+  color: #08779a;
+  font-size: 20rpx;
+  font-weight: 900;
+}
+
+.input-head text:last-child {
+  color: #cc3f98;
 }
 
 textarea {
   width: 100%;
-  height: 220rpx;
+  height: 228rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  border: 2rpx solid rgba(46, 255, 233, 0.18);
   color: #102138;
+  background: rgba(245, 253, 255, 0.82);
   font-size: 27rpx;
   line-height: 1.65;
 }
@@ -124,27 +96,51 @@ textarea {
   gap: 16rpx;
 }
 
+.quick-row {
+  margin-top: 12rpx;
+}
+
+.recommend-title {
+  margin-top: 18rpx;
+  color: #6d7892;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .quick-chip,
 .pill {
   min-width: 132rpx;
   height: 60rpx;
   padding: 0 20rpx;
   border-radius: 14rpx;
-  border: 2rpx solid rgba(47, 125, 241, 0.20);
+  border: 2rpx solid rgba(46, 255, 233, 0.24);
   color: #315171;
-  background: rgba(255, 255, 255, 0.76);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 45, 171, 0.05);
   font-size: 24rpx;
   font-weight: 800;
 }
 
 .pill.active {
-  color: #0f4fa5;
-  background: #e7f3ff;
-  border-color: rgba(47, 125, 241, 0.44);
+  color: #08779a;
+  background: #eaffff;
+  border-color: rgba(46, 255, 233, 0.52);
+  box-shadow:
+    inset 0 0 0 1rpx rgba(255, 255, 255, 0.72),
+    0 0 18rpx rgba(46, 255, 233, 0.12);
 }
 
 .flow-card {
   padding: 22rpx;
+}
+
+.flow-character {
+  position: absolute;
+  right: 8rpx;
+  bottom: -18rpx;
+  width: 128rpx;
+  height: 168rpx;
+  opacity: 0.2;
 }
 
 .flow-step {
@@ -152,7 +148,7 @@ textarea {
   align-items: flex-start;
   gap: 18rpx;
   padding: 18rpx 0;
-  border-bottom: 2rpx solid rgba(47, 125, 241, 0.08);
+  border-bottom: 2rpx solid rgba(46, 255, 233, 0.10);
 }
 
 .flow-step:last-child {
@@ -162,12 +158,14 @@ textarea {
 .flow-step > text {
   width: 48rpx;
   height: 48rpx;
+  flex: 0 0 auto;
   border-radius: 14rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2f7df1;
-  background: #ecf7ff;
+  color: #08779a;
+  background: #eaffff;
+  border: 2rpx solid rgba(46, 255, 233, 0.28);
   font-weight: 900;
 }
 

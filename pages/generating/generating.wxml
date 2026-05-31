@@ -8,6 +8,7 @@
     <text class="tag">结构化出题</text>
     <view class="hero-title">正在把知识压缩成关卡</view>
     <view class="hero-subtitle">系统正在提炼考点、生成选项并校验答案结构。</view>
+    <image class="hero-character" src="/assets/characters/cyan-idol.svg" mode="aspectFit" />
   </view>
 
   <view class="scan-card">
@@ -22,26 +23,28 @@
   <view class="card log-card">
     <block wx:for="{{steps}}" wx:key="title">
       <view class="log-item">
-        <view class="log-dot {{item.done ? 'done' : ''}}">{{item.done ? '✓' : item.index}}</view>
+        <view class="log-dot {{item.failed ? 'failed' : item.done ? 'done' : ''}}">{{item.failed ? '!' : item.done ? '✓' : item.index}}</view>
         <view class="log-copy">
           <text>{{item.title}}</text>
           <text>{{item.desc}}</text>
         </view>
-        <text class="tag {{item.done ? 'mint' : ''}}">{{item.done ? '完成' : '进行中'}}</text>
+        <text class="tag {{item.failed ? 'failed' : item.done ? 'mint' : ''}}">{{item.failed ? '失败' : item.done ? '完成' : '进行中'}}</text>
       </view>
     </block>
     <view class="progress-track">
-      <view class="progress-bar" style="width: {{progress}}%;"></view>
+      <view class="progress-bar {{failed ? 'failed' : ''}}" style="width: {{progress}}%;"></view>
     </view>
   </view>
 
   <view class="guide card">
-    <view class="guide-avatar"><view></view></view>
+    <image class="guide-avatar" src="/assets/characters/cyan-idol.svg" mode="aspectFit" />
     <view>
       <text>领航员提示</text>
-      <text>这是本地 Mock AI 闭环。后续接真实模型时，只替换 services 层即可。</text>
+      <text wx:if="{{failed}}">{{errorMessage}}</text>
+      <text wx:else>正在调用本地 Python 后端生成题目。模拟器测试时，如果出现域名错误，请在开发者工具本地设置中开启“不校验合法域名”。</text>
     </view>
   </view>
 
+  <button wx:if="{{failed}}" class="primary-btn retry-btn" bindtap="retryGenerate">重试生成</button>
   <button class="secondary-btn" bindtap="backHome">返回重新输入</button>
 </view>

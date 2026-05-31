@@ -7,23 +7,23 @@
   <style>
     :root {
       --ink: #102138;
-      --muted: #66758c;
-      --faint: #8fa0b8;
-      --panel: rgba(255, 255, 255, 0.78);
+      --muted: #5e6f86;
+      --faint: #8290a8;
+      --panel: rgba(255, 255, 255, 0.84);
       --panel-solid: #ffffff;
-      --line: rgba(82, 130, 188, 0.22);
-      --blue: #2f7df1;
-      --blue-2: #69c8ff;
+      --line: rgba(46, 255, 233, 0.28);
+      --blue: #2effe9;
+      --blue-2: #7ed8ff;
       --navy: #14345c;
-      --gold: #c7922e;
-      --gold-soft: #fff2cf;
-      --mint: #18a985;
+      --gold: #d4ff4a;
+      --gold-soft: #fbffdd;
+      --mint: #18d7ba;
       --mint-soft: #e2fff7;
-      --rose: #d85c74;
+      --rose: #ff5ec6;
       --rose-soft: #fff0f3;
       --cloud: #f5f8ff;
       --paper: #fbfdff;
-      --shadow: 0 18px 50px rgba(37, 74, 130, 0.14);
+      --shadow: 0 18px 50px rgba(42, 113, 178, 0.13);
       --radius: 8px;
     }
 
@@ -37,9 +37,10 @@
       color: var(--ink);
       font-family: "HarmonyOS Sans SC", "MiSans", "PingFang SC", "Microsoft YaHei", sans-serif;
       background:
-        radial-gradient(circle at 18% 12%, rgba(105, 200, 255, 0.24), transparent 24%),
-        radial-gradient(circle at 80% 0%, rgba(255, 229, 170, 0.32), transparent 28%),
-        linear-gradient(135deg, #eef6ff 0%, #f9fbff 45%, #fff9ed 100%);
+        radial-gradient(circle at 14% 4%, rgba(46, 255, 233, 0.22), transparent 30%),
+        radial-gradient(circle at 88% 2%, rgba(255, 45, 171, 0.16), transparent 30%),
+        radial-gradient(circle at 68% 92%, rgba(212, 255, 74, 0.12), transparent 32%),
+        linear-gradient(142deg, #f2fbff 0%, #fbfdff 46%, #fff5fb 100%);
       overflow-x: hidden;
     }
 
@@ -54,17 +55,17 @@
 
     body::before {
       background-image:
-        linear-gradient(115deg, transparent 0 42%, rgba(47, 125, 241, 0.12) 42.2%, transparent 42.8%),
-        linear-gradient(138deg, transparent 0 58%, rgba(199, 146, 46, 0.16) 58.2%, transparent 58.7%),
-        radial-gradient(circle, rgba(20, 52, 92, 0.22) 0 1px, transparent 1.4px);
+        linear-gradient(115deg, transparent 0 42%, rgba(46, 255, 233, 0.13) 42.2%, transparent 42.8%),
+        linear-gradient(138deg, transparent 0 58%, rgba(255, 45, 171, 0.12) 58.2%, transparent 58.7%),
+        radial-gradient(circle, rgba(46, 255, 233, 0.22) 0 1px, transparent 1.4px);
       background-size: 100% 100%, 100% 100%, 34px 34px;
       opacity: 0.58;
     }
 
     body::after {
       background:
-        repeating-linear-gradient(90deg, transparent 0 76px, rgba(47, 125, 241, 0.06) 77px 78px, transparent 79px 154px);
-      mask-image: linear-gradient(to bottom, transparent, black 16%, black 84%, transparent);
+        repeating-linear-gradient(90deg, transparent 0 76px, rgba(46, 255, 233, 0.08) 77px 78px, transparent 79px 154px);
+      mask-image: linear-gradient(to bottom, transparent, white 16%, white 84%, transparent);
     }
 
     .page-shell {
@@ -334,40 +335,40 @@
     .mascot {
       display: block;
       color: var(--blue);
-      filter: drop-shadow(0 16px 22px rgba(47, 125, 241, 0.18));
+      filter: drop-shadow(0 16px 22px rgba(46, 255, 233, 0.18));
     }
 
     .mascot.home {
       position: absolute;
-      top: 26px;
-      right: 14px;
-      width: 92px;
-      height: 116px;
+      top: 14px;
+      right: 4px;
+      width: 126px;
+      height: 166px;
       animation: float-soft 4.6s ease-in-out infinite;
     }
 
     .mascot.mini {
-      width: 50px;
-      height: 62px;
+      width: 56px;
+      height: 74px;
       flex: 0 0 auto;
     }
 
     .mascot.report {
       position: absolute;
-      right: 14px;
-      top: 13px;
-      width: 76px;
-      height: 92px;
+      right: 4px;
+      top: 8px;
+      width: 96px;
+      height: 126px;
       opacity: 0.96;
       animation: float-soft 5.4s ease-in-out infinite;
     }
 
     .mascot.poster-mascot {
       position: absolute;
-      top: 88px;
-      right: 18px;
-      width: 98px;
-      height: 116px;
+      top: 72px;
+      right: 4px;
+      width: 126px;
+      height: 166px;
       opacity: 0.96;
     }
 
@@ -456,8 +457,9 @@
     }
 
     .coach-strip .mascot {
-      width: 34px;
-      height: 42px;
+      width: 42px;
+      height: 54px;
+      flex: 0 0 auto;
     }
 
     @keyframes float-soft {
@@ -617,8 +619,8 @@
       margin-top: 16px;
       color: #072243;
       background:
-        linear-gradient(135deg, #ffe7a6, #86ddff 48%, #6db4ff);
-      box-shadow: 0 12px 28px rgba(47, 125, 241, 0.22);
+        linear-gradient(105deg, #2effe9 0%, #d4ff4a 48%, #ff7bd5 100%);
+      box-shadow: 0 12px 28px rgba(46, 255, 233, 0.22);
     }
 
     .secondary-btn {
@@ -849,12 +851,18 @@
     }
 
     .options {
+      width: 100%;
+      box-sizing: border-box;
       display: grid;
       gap: 10px;
       margin-top: 14px;
     }
 
     .option {
+      box-sizing: border-box;
+      width: 100%;
+      min-width: 100%;
+      max-width: none;
       display: grid;
       grid-template-columns: 30px 1fr;
       gap: 10px;
@@ -1225,22 +1233,6 @@
   </style>
 </head>
 <body>
-  <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
-    <symbol id="svg-navigator" viewBox="0 0 120 150">
-      <path d="M20 112c-9 5-13 13-12 22m92-22c9 5 13 13 12 22" fill="none" stroke="rgba(47,125,241,0.42)" stroke-width="1.8" stroke-linecap="round" />
-      <path d="M28 52c0-22 14-38 32-38s32 16 32 38v31c0 21-14 36-32 36S28 104 28 83V52Z" fill="#eef9ff" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="M37 50c4-13 13-21 23-21s19 8 23 21c-5 7-13 11-23 11s-18-4-23-11Z" fill="#dff3ff" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="M35 68c6-4 15-6 25-6s19 2 25 6v17c0 14-10 24-25 24S35 99 35 85V68Z" fill="#fff9ed" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="M51 82h.1M69 82h.1M54 94c4 3 8 3 12 0" fill="none" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-      <circle cx="45" cy="91" r="5" fill="#ffd7df" opacity="0.8" />
-      <circle cx="75" cy="91" r="5" fill="#ffd7df" opacity="0.8" />
-      <path d="M22 49c-8 2-13 8-14 16 8 2 14 0 19-6l-5-10Z" fill="#ffe6a7" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="M98 49c8 2 13 8 14 16-8 2-14 0-19-6l5-10Z" fill="#8bdcff" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="M38 116h44l10 22H28l10-22Z" fill="#bff8e9" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="M60 8v-6M91 24l5-5M29 24l-5-5M92 127l8 9M28 127l-8 9" fill="none" stroke="rgba(47,125,241,0.42)" stroke-width="1.8" stroke-linecap="round" />
-      <path d="M60 122l8 8-8 8-8-8 8-8Z" fill="#ffe6a7" stroke="#17395e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-    </symbol>
-  </svg>
   <main class="page-shell">
     <header class="board-head">
       <div>
@@ -1275,9 +1267,7 @@
           </div>
           <div class="content">
             <section class="hero-card with-mascot">
-              <svg class="mascot home" role="img" aria-label="星轨领航员卡通形象">
-                <use href="#svg-navigator"></use>
-              </svg>
+              <img class="mascot home" src="../assets/characters/cyan-idol.svg" alt="青色虚拟偶像学习领航员" />
               <span class="hud-label gold">今日学习任务</span>
               <h2 class="hero-title">把一段知识变成可闯关的测验</h2>
               <p class="hero-subtitle">粘贴文章、笔记或课程片段，AI 将提炼考点并生成 3 到 5 道互动题。</p>
@@ -1372,9 +1362,7 @@
             </section>
 
             <div class="guide-card">
-              <svg class="mascot mini" role="img" aria-label="星轨领航员提示">
-                <use href="#svg-navigator"></use>
-              </svg>
+              <img class="mascot mini" src="../assets/characters/cyan-idol.svg" alt="青色虚拟偶像学习领航员" />
               <div>
                 <strong>领航员提示</strong>
                 <span>若当前设备无法稳定接收流式片段，系统会自动切换到稳定模式继续生成。</span>
@@ -1404,9 +1392,7 @@
             <div class="progress-track"><div class="progress-bar" style="width: 40%;"></div></div>
             <div class="spacer-18"></div>
             <div class="coach-strip">
-              <svg class="mascot" role="img" aria-label="星轨领航员提示">
-                <use href="#svg-navigator"></use>
-              </svg>
+              <img class="mascot" src="../assets/characters/cyan-idol.svg" alt="青色虚拟偶像学习领航员" />
               <span>先找“目的”关键词，别被看起来正确的复习动作带偏。</span>
             </div>
 
@@ -1483,9 +1469,7 @@
           </div>
           <div class="content">
             <section class="report-hero" style="position: relative;">
-              <svg class="mascot report" role="img" aria-label="星轨领航员庆祝">
-                <use href="#svg-navigator"></use>
-              </svg>
+              <img class="mascot report" src="../assets/characters/silver-analyst.svg" alt="银灰赛博复盘分析员" />
               <div class="grade">A</div>
               <h2>本次知识吸收良好</h2>
               <p>你已经掌握核心概念，但在“举例迁移”上仍有提升空间。</p>
@@ -1537,9 +1521,7 @@
           </div>
           <div class="poster-stage">
             <section class="poster">
-              <svg class="mascot poster-mascot" role="img" aria-label="星轨领航员海报形象">
-                <use href="#svg-navigator"></use>
-              </svg>
+              <img class="mascot poster-mascot" src="../assets/characters/silver-analyst.svg" alt="银灰赛博复盘分析员" />
               <span class="poster-badge">星轨学习战报</span>
               <h2>我完成了一次知识跃迁</h2>
               <p>用 5 道题快速复盘“费曼学习法”，正确率达到 80%，薄弱点已被 AI 标记。</p>

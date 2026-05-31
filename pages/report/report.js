@@ -1,4 +1,4 @@
-const ai = require('../../services/mock-ai');
+const api = require('../../services/api');
 
 function formatDuration(seconds) {
   const safeSeconds = Math.max(0, Number(seconds) || 0);
@@ -17,36 +17,46 @@ Page({
   },
 
   onLoad() {
-    const quiz = wx.getStorageSync(ai.QUIZ_KEY);
-    const answers = wx.getStorageSync(ai.ANSWERS_KEY) || [];
+    const quiz = wx.getStorageSync(api.QUIZ_KEY);
+    const answers = wx.getStorageSync(api.ANSWERS_KEY) || [];
 
     if (!quiz || !quiz.questions) {
       wx.redirectTo({ url: '/pages/index/index' });
       return;
     }
 
-    const report = ai.generateReport(quiz, answers);
-    wx.setStorageSync(ai.REPORT_KEY, report);
+    api.generateReport(quiz, answers)
+      .then(report => {
+        wx.setStorageSync(api.REPORT_KEY, report);
 
-    const knowledgeMap = report.knowledgeMap.map((item) => ({
-      ...item,
-      name: item.topic,
-      className: item.mastery === 'weak' ? 'weak' : item.mastery === 'good' ? 'good' : 'normal'
-    }));
+        const knowledgeMap = report.knowledgeMap.map((item) => ({
+          ...item,
+          name: item.topic,
+          className: item.mastery === 'weak' ? 'weak' : item.mastery === 'good' ? 'good' : 'normal'
+        }));
 
-    this.setData({
-      quiz,
-      report,
-      durationText: formatDuration(report.duration),
-      knowledgeMap,
-      weakPoints: report.weakPoints
-    });
+        this.setData({
+          quiz,
+          report,
+          durationText: formatDuration(report.duration),
+          knowledgeMap,
+          weakPoints: report.weakPoints
+        });
+      })
+      .catch(error => {
+        wx.showModal({
+          title: '报告生成失败',
+          content: error.message || '请检查后端服务是否已启动',
+          showCancel: false,
+          success: () => wx.redirectTo({ url: '/pages/index/index' })
+        });
+      });
   },
 
   restart() {
-    wx.removeStorageSync(ai.QUIZ_KEY);
-    wx.removeStorageSync(ai.ANSWERS_KEY);
-    wx.removeStorageSync(ai.REPORT_KEY);
+    wx.removeStorageSync(api.QUIZ_KEY);
+    wx.removeStorageSync(api.ANSWERS_KEY);
+    wx.removeStorageSync(api.REPORT_KEY);
     wx.redirectTo({ url: '/pages/index/index' });
   },
 

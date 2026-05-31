@@ -6,13 +6,10 @@
 
   <view class="hero card">
     <text class="tag gold">今日学习任务</text>
-    <view class="hero-title">把一段知识变成可闯关的测验</view>
-    <view class="hero-subtitle">输入一段内容，AI 将生成题目。你答题后会得到即时解析和学习报告。</view>
-    <view class="mascot">
-      <view class="helmet"></view>
-      <view class="face"></view>
-      <view class="body"></view>
-    </view>
+    <view class="hero-title">把知识主题变成可闯关的测验</view>
+    <view class="hero-subtitle">输入一个主题或一段内容，AI 将生成题目。你答题后会得到即时解析和学习报告。</view>
+    <image class="character hero-character" src="/assets/characters/cyan-idol.svg" mode="aspectFit" />
+    <view class="hero-orbit"></view>
   </view>
 
   <view class="section-title">
@@ -20,17 +17,23 @@
     <text class="muted">{{contentLength}} 字</text>
   </view>
   <view class="input-card card">
+    <view class="input-head">
+      <text>INPUT SIGNAL</text>
+      <text>TEXT MODE</text>
+    </view>
     <textarea
       value="{{content}}"
       maxlength="-1"
       auto-height="{{false}}"
-      placeholder="例：把费曼学习法的核心步骤变成 3 道题，帮我检查自己是否真正理解。"
+      placeholder="输入你想学的知识，例如：RAG、向量数据库、费曼学习法"
       bindinput="onInput"
     />
+    <view class="recommend-title">推荐想学知识</view>
     <view class="quick-row">
-      <button class="quick-chip" bindtap="useExample" data-index="0">费曼学习法</button>
-      <button class="quick-chip" bindtap="useExample" data-index="1">碎片化学习</button>
-      <button class="quick-chip" bindtap="useExample" data-index="2">复利思维</button>
+      <button class="quick-chip" bindtap="useExample" data-index="0">RAG</button>
+      <button class="quick-chip" bindtap="useExample" data-index="1">向量数据库</button>
+      <button class="quick-chip" bindtap="useExample" data-index="2">费曼学习法</button>
+      <button class="quick-chip" bindtap="useExample" data-index="3">RAG定义</button>
     </view>
   </view>
 
@@ -50,8 +53,9 @@
     <text class="muted">核心闭环</text>
   </view>
   <view class="flow-card card">
-    <view class="flow-step"><text>1</text><view><text>用户输入内容</text><text class="small muted">支持自由文本与示例模板</text></view></view>
-    <view class="flow-step"><text>2</text><view><text>AI 生成题目</text><text class="small muted">本地 Mock AI，后续可替换真实 API</text></view></view>
+    <image class="character flow-character" src="/assets/characters/cyan-idol.svg" mode="aspectFit" />
+    <view class="flow-step"><text>1</text><view><text>用户输入内容</text><text class="small muted">支持短主题、自由文本与示例模板</text></view></view>
+    <view class="flow-step"><text>2</text><view><text>AI 生成题目</text><text class="small muted">调用本地 Python 后端生成结构化题目</text></view></view>
     <view class="flow-step"><text>3</text><view><text>用户答题</text><text class="small muted">前端即时判题和解析</text></view></view>
     <view class="flow-step"><text>4</text><view><text>AI 生成分析报告</text><text class="small muted">正确率、薄弱点、复习建议</text></view></view>
   </view>
