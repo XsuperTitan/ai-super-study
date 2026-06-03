@@ -4,13 +4,19 @@ const examples = [
   'RAG',
   '向量数据库',
   '费曼学习法',
-  'RAG是AI的检索增强引擎'
+  'RAG定义',
+  '提示词工程',
+  '大模型幻觉',
+  '知识图谱',
+  'Transformer'
 ];
 
 Page({
   data: {
     content: examples[0],
     contentLength: examples[0].length,
+    recommendedTopics: examples,
+    sourceModeLabel: 'TEXT MODE',
     questionCount: 3,
     canStart: true
   },
@@ -20,6 +26,7 @@ Page({
     this.setData({
       content,
       contentLength: content.length,
+      sourceModeLabel: api.isHttpUrl(content) ? 'URL MODE' : 'TEXT MODE',
       canStart: content.trim().length >= api.MIN_SOURCE_LENGTH
     });
   },
@@ -30,6 +37,7 @@ Page({
     this.setData({
       content,
       contentLength: content.length,
+      sourceModeLabel: 'TEXT MODE',
       canStart: true
     });
   },
@@ -49,6 +57,7 @@ Page({
 
     wx.setStorageSync(api.SOURCE_KEY, {
       content,
+      sourceType: api.detectSourceType(content),
       questionCount: this.data.questionCount,
       createdAt: Date.now()
     });
@@ -57,5 +66,21 @@ Page({
 
   openHistory() {
     wx.navigateTo({ url: '/pages/history/history' });
+  },
+
+  continueProgress() {
+    const quiz = wx.getStorageSync(api.QUIZ_KEY);
+    if (!quiz || !quiz.questions || !quiz.questions.length) {
+      wx.showToast({ title: '暂无可继续的答题', icon: 'none' });
+      return;
+    }
+
+    const answers = wx.getStorageSync(api.ANSWERS_KEY) || [];
+    if (answers.length >= quiz.questions.length) {
+      wx.navigateTo({ url: '/pages/report/report' });
+      return;
+    }
+
+    wx.navigateTo({ url: '/pages/quiz/quiz' });
   }
 });

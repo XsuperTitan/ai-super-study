@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -112,6 +112,7 @@ class GenerateQuizRequest(BaseModel):
     questionCount: Literal[3, 5] = 3
     questionTypes: list[QuestionType] = Field(default_factory=lambda: ["single_choice", "true_false"])
     difficulty: Difficulty = "normal"
+    stream: bool = False
 
     @field_validator("questionTypes")
     @classmethod
@@ -134,3 +135,52 @@ class GenerateReportRequest(BaseModel):
 
 class GenerateReportResponse(BaseModel):
     report: Report
+
+
+class SaveHistoryRequest(BaseModel):
+    anonymousId: str = Field(min_length=1)
+    sourceContent: str = ""
+    quiz: dict[str, Any]
+    answers: list[dict[str, Any]] = Field(default_factory=list)
+    report: dict[str, Any]
+    historyId: str = ""
+    provider: str = "unknown"
+    questionCount: int = Field(default=0, ge=0)
+    accuracy: int = Field(default=0, ge=0, le=100)
+    score: int = Field(default=0, ge=0, le=100)
+
+
+class HistoryRecordResponse(BaseModel):
+    historyId: str
+    sourceContent: str
+    sourcePreview: str
+    quiz: dict[str, Any]
+    answers: list[dict[str, Any]]
+    report: dict[str, Any]
+    provider: str
+    questionCount: int
+    accuracy: int
+    score: int
+    createdAt: str
+    updatedAt: str
+
+
+class HistoryListResponse(BaseModel):
+    records: list[HistoryRecordResponse]
+
+
+JobStatus = Literal["queued", "running", "succeeded", "failed"]
+
+
+class JobError(BaseModel):
+    code: str
+    message: str
+
+
+class JobStatusResponse(BaseModel):
+    jobId: str
+    status: JobStatus
+    progress: int = Field(ge=0, le=100)
+    message: str = ""
+    result: dict[str, Any] | None = None
+    error: JobError | None = None

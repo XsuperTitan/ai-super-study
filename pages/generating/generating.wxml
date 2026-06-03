@@ -1,7 +1,7 @@
 <view class="page generating-page">
   <view class="brand-row">
     <view class="brand"><view class="brand-mark"></view><text>知识跃迁</text></view>
-    <text class="tag">AI 引擎在线</text>
+    <text class="tag">{{modeText}}</text>
   </view>
 
   <view class="card hero">
@@ -41,7 +41,7 @@
     <view>
       <text>领航员提示</text>
       <text wx:if="{{failed}}">{{errorMessage}}</text>
-      <text wx:else>正在调用本地 Python 后端生成题目。模拟器测试时，如果出现域名错误，请在开发者工具本地设置中开启“不校验合法域名”。</text>
+      <text wx:else>正在调用本地 Python 后端生成题目；流式不可用时会自动切换为轮询生成。</text>
     </view>
   </view>
 

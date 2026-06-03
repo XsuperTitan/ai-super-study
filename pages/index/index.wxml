@@ -19,21 +19,25 @@
   <view class="input-card card">
     <view class="input-head">
       <text>INPUT SIGNAL</text>
-      <text>TEXT MODE</text>
+      <text>{{sourceModeLabel}}</text>
     </view>
     <textarea
       value="{{content}}"
       maxlength="-1"
       auto-height="{{false}}"
-      placeholder="输入你想学的知识，例如：RAG、向量数据库、费曼学习法"
+      placeholder="输入主题、正文，或粘贴普通网页链接"
       bindinput="onInput"
     />
+    <view class="source-hint">{{sourceModeLabel == 'URL MODE' ? '将先解析网页正文，再生成闯关题。' : '短主题会生成入门自测题，长文本会基于正文出题。'}}</view>
     <view class="recommend-title">推荐想学知识</view>
     <view class="quick-row">
-      <button class="quick-chip" bindtap="useExample" data-index="0">RAG</button>
-      <button class="quick-chip" bindtap="useExample" data-index="1">向量数据库</button>
-      <button class="quick-chip" bindtap="useExample" data-index="2">费曼学习法</button>
-      <button class="quick-chip" bindtap="useExample" data-index="3">RAG定义</button>
+      <button
+        wx:for="{{recommendedTopics}}"
+        wx:key="*this"
+        class="quick-chip"
+        bindtap="useExample"
+        data-index="{{index}}"
+      >{{item}}</button>
     </view>
   </view>
 
@@ -48,6 +52,14 @@
     <button class="pill active">判断</button>
   </view>
 
+  <view class="action-panel">
+    <button class="primary-btn start-btn" disabled="{{!canStart}}" bindtap="startGenerate">启动知识跃迁</button>
+    <view class="secondary-action-row">
+      <button class="secondary-btn history-btn" bindtap="openHistory">查看历史记录</button>
+      <button class="secondary-btn continue-btn" bindtap="continueProgress">继续答题进度</button>
+    </view>
+  </view>
+
   <view class="section-title">
     <text>本轮会跑通</text>
     <text class="muted">核心闭环</text>
@@ -60,7 +72,5 @@
     <view class="flow-step"><text>4</text><view><text>AI 生成分析报告</text><text class="small muted">正确率、薄弱点、复习建议</text></view></view>
   </view>
 
-  <button class="primary-btn start-btn" disabled="{{!canStart}}" bindtap="startGenerate">启动知识跃迁</button>
-  <button class="secondary-btn history-btn" bindtap="openHistory">查看历史记录</button>
   <view class="safe-bottom"></view>
 </view>

@@ -22,9 +22,12 @@ Page({
       wx.redirectTo({ url: '/pages/index/index' });
       return;
     }
+    const answers = wx.getStorageSync(api.ANSWERS_KEY) || [];
+    const currentIndex = Math.min(answers.length, quiz.questions.length - 1);
     this.startedAt = Date.now();
     this.setData({
       quiz,
+      currentIndex,
       total: quiz.questions.length,
       modelProviderLabel: formatProviderLabel(quiz)
     }, () => this.syncQuestion());

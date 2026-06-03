@@ -24,7 +24,8 @@ function formatProvider(provider) {
 Page({
   data: {
     records: [],
-    hasHistory: false
+    hasHistory: false,
+    loading: false
   },
 
   onShow() {
@@ -32,39 +33,49 @@ Page({
   },
 
   loadHistory() {
-    const records = history.getHistory().map(item => ({
-      ...item,
-      title: item.quiz && item.quiz.title ? item.quiz.title : '未命名闯关',
-      sourcePreview: excerpt(item.sourceContent, 42),
-      timeText: formatTime(item.updatedAt || item.createdAt),
-      providerText: formatProvider(item.provider),
-      questionText: `${item.questionCount || 0} 题`
-    }));
-    this.setData({
-      records,
-      hasHistory: records.length > 0
-    });
+    this.setData({ loading: true });
+    history.getHistory()
+      .then(list => {
+        const records = list.map(item => ({
+          ...item,
+          title: item.quiz && item.quiz.title ? item.quiz.title : '未命名闯关',
+          sourcePreview: item.sourcePreview || excerpt(item.sourceContent, 42),
+          timeText: formatTime(item.updatedAt || item.createdAt),
+          providerText: formatProvider(item.provider),
+          questionText: `${item.questionCount || 0} 题`
+        }));
+        this.setData({
+          records,
+          hasHistory: records.length > 0,
+          loading: false
+        });
+      })
+      .catch(() => {
+        this.setData({ records: [], hasHistory: false, loading: false });
+      });
   },
 
   openRecord(event) {
     const historyId = event.currentTarget.dataset.id;
-    const record = history.getHistoryRecord(historyId);
-    if (!record) {
-      wx.showToast({ title: '记录不存在', icon: 'none' });
-      this.loadHistory();
-      return;
-    }
+    history.getHistoryRecord(historyId)
+      .then(record => {
+        if (!record) {
+          wx.showToast({ title: '记录不存在', icon: 'none' });
+          this.loadHistory();
+          return;
+        }
 
-    wx.setStorageSync(api.SOURCE_KEY, {
-      content: record.sourceContent,
-      questionCount: record.questionCount || 3,
-      restoredFromHistory: true,
-      createdAt: record.createdAt
-    });
-    wx.setStorageSync(api.QUIZ_KEY, record.quiz);
-    wx.setStorageSync(api.ANSWERS_KEY, record.answers || []);
-    wx.setStorageSync(api.REPORT_KEY, record.report);
-    wx.redirectTo({ url: '/pages/report/report' });
+        wx.setStorageSync(api.SOURCE_KEY, {
+          content: record.sourceContent,
+          questionCount: record.questionCount || 3,
+          restoredFromHistory: true,
+          createdAt: record.createdAt
+        });
+        wx.setStorageSync(api.QUIZ_KEY, record.quiz);
+        wx.setStorageSync(api.ANSWERS_KEY, record.answers || []);
+        wx.setStorageSync(api.REPORT_KEY, record.report);
+        wx.redirectTo({ url: '/pages/report/report' });
+      });
   },
 
   deleteRecord(event) {
@@ -76,8 +87,7 @@ Page({
       confirmColor: '#d85c74',
       success: (res) => {
         if (!res.confirm) return;
-        history.deleteHistoryRecord(historyId);
-        this.loadHistory();
+        history.deleteHistoryRecord(historyId).then(() => this.loadHistory());
       }
     });
   },
@@ -90,8 +100,7 @@ Page({
       confirmColor: '#d85c74',
       success: (res) => {
         if (!res.confirm) return;
-        history.clearHistory();
-        this.loadHistory();
+        history.clearHistory().then(() => this.loadHistory());
       }
     });
   },

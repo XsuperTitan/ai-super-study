@@ -21,6 +21,19 @@ class NormalizedSource:
 
 
 def normalize_text(content: str, source_type: str = "text") -> NormalizedSource:
+    if source_type == "url":
+        from app.services.webpage_parser import parse_url_source
+
+        page = parse_url_source(content)
+        return NormalizedSource(
+            source_type="url",
+            content=page.content,
+            title=page.title[:18] + ("..." if len(page.title) > 18 else ""),
+            length=len(page.content),
+            input_mode="content",
+            warnings=page.warnings,
+        )
+
     text = str(content or "").strip()
     if len(text) < MIN_CONTENT_LENGTH:
         raise AppError("CONTENT_TOO_SHORT", "至少输入 2 个有效字符后再生成题目", 400)

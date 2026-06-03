@@ -58,19 +58,147 @@ function request(path, method, data) {
   });
 }
 
-function generateQuiz(source) {
-  return request('/api/v1/quiz/generate', 'POST', {
-    sourceType: 'text',
-    content: normalizeSource(source && source.content),
+function buildQuizRequest(source) {
+  const content = normalizeSource(source && source.content);
+  const sourceType = source && source.sourceType ? source.sourceType : detectSourceType(content);
+  return {
+    sourceType,
+    content,
     questionCount: source && source.questionCount === 5 ? 5 : 3,
     questionTypes: ['single_choice', 'true_false'],
     difficulty: 'normal'
-  }).then(data => {
-    const quiz = data.quiz || {};
-    quiz.modelProvider = data.provider || 'unknown';
-    quiz.fallbackReason = data.fallbackReason || '';
-    return quiz;
+  };
+}
+
+function detectSourceType(content) {
+  return isHttpUrl(content) ? 'url' : 'text';
+}
+
+function isHttpUrl(content) {
+  const text = String(content || '').trim();
+  return /^https?:\/\/[^\s]+$/i.test(text);
+}
+
+function generateQuiz(source) {
+  return request('/api/v1/quiz/generate', 'POST', buildQuizRequest(source)).then(normalizeQuizResult);
+}
+
+function createQuizJob(source) {
+  return request('/api/v1/quiz/jobs', 'POST', buildQuizRequest(source));
+}
+
+function getJobStatus(jobId) {
+  return request('/api/v1/jobs/' + encodeURIComponent(jobId), 'GET');
+}
+
+function generateQuizStream(source, handlers) {
+  const callbacks = handlers || {};
+  return new Promise((resolve, reject) => {
+    let buffer = '';
+    let finished = false;
+    const task = wx.request({
+      url: getApiBaseUrl() + '/api/v1/quiz/generate/stream',
+      method: 'POST',
+      data: buildQuizRequest(source),
+      timeout: 60000,
+      enableChunked: true,
+      header: {
+        'content-type': 'application/json'
+      },
+      success(res) {
+        if (finished) return;
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error('流式生成不可用'));
+          return;
+        }
+        if (res.data && typeof res.data === 'string') {
+          consumeChunk(res.data);
+        }
+      },
+      fail(error) {
+        if (!finished) reject(new Error(formatRequestError(error)));
+      },
+      complete() {
+        if (!finished && buffer.trim()) {
+          consumeLines(true);
+        }
+      }
+    });
+
+    if (!task || !task.onChunkReceived) {
+      reject(new Error('当前环境不支持流式响应'));
+      return;
+    }
+
+    task.onChunkReceived(res => {
+      if (finished) return;
+      consumeChunk(decodeChunk(res.data));
+    });
+
+    function consumeChunk(text) {
+      buffer += text || '';
+      consumeLines(false);
+    }
+
+    function consumeLines(flush) {
+      const lines = buffer.split('\n');
+      buffer = flush ? '' : lines.pop();
+      lines.forEach(line => {
+        const value = line.trim();
+        if (!value) return;
+        let event = null;
+        try {
+          event = JSON.parse(value);
+        } catch (error) {
+          finished = true;
+          reject(new Error('流式数据解析失败'));
+          return;
+        }
+        if (event.type === 'progress') {
+          if (callbacks.onProgress) callbacks.onProgress(event);
+          return;
+        }
+        if (event.type === 'done') {
+          finished = true;
+          resolve(normalizeQuizResult(event.data || {}));
+          return;
+        }
+        if (event.type === 'error') {
+          finished = true;
+          reject(new Error((event.error && event.error.message) || '题目生成失败'));
+        }
+      });
+    }
   });
+}
+
+function normalizeQuizResult(data) {
+  const quiz = data.quiz || {};
+  quiz.modelProvider = data.provider || 'unknown';
+  quiz.fallbackReason = data.fallbackReason || '';
+  return quiz;
+}
+
+function decodeChunk(data) {
+  if (!data) return '';
+  if (typeof data === 'string') return data;
+  if (typeof TextDecoder !== 'undefined') {
+    return new TextDecoder('utf-8').decode(data);
+  }
+  return arrayBufferToUtf8(data);
+}
+
+function arrayBufferToUtf8(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let encoded = '';
+  for (let index = 0; index < bytes.length; index += 1) {
+    encoded += '%' + bytes[index].toString(16).padStart(2, '0');
+  }
+  try {
+    return decodeURIComponent(encoded);
+  } catch (error) {
+    return '';
+  }
 }
 
 function generateReport(quiz, answers) {
@@ -93,8 +221,14 @@ module.exports = {
   DEFAULT_API_BASE_URL,
   MIN_SOURCE_LENGTH,
   normalizeSource,
+  detectSourceType,
+  isHttpUrl,
   getApiBaseUrl,
   formatRequestError,
+  request,
   generateQuiz,
+  generateQuizStream,
+  createQuizJob,
+  getJobStatus,
   generateReport
 };

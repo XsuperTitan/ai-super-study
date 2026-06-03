@@ -24,3 +24,18 @@ For local WeChat Developer Tools testing, keep the mini program API base URL at 
 cd C:\projects\ai-super-questions\backend
 python -m pytest
 ```
+
+## Optional MySQL history storage
+
+The mini program still falls back to local storage when server history is disabled. To enable server-side history records:
+
+```powershell
+cd C:\projects\ai-super-questions\backend
+Copy-Item .env.example .env
+# Set DATABASE_URL in .env:
+# DATABASE_URL=mysql+pymysql://user:password@host:3306/ai_super_questions?charset=utf8mb4
+python -m alembic upgrade head
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+`DATABASE_URL` can be left empty for normal local MVP development. In that mode, `/api/v1/history` returns a disabled response and the mini program keeps using local cached history.

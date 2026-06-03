@@ -14,7 +14,8 @@ Page({
     progress: 8,
     steps: createSteps(),
     failed: false,
-    errorMessage: ''
+    errorMessage: '',
+    modeText: '流式生成'
   },
 
   onLoad() {
@@ -28,69 +29,157 @@ Page({
   },
 
   onUnload() {
-    if (this.timer) clearTimeout(this.timer);
+    this.stopTimers();
+    this.runId = '';
   },
 
   run(source) {
-    if (this.timer) clearTimeout(this.timer);
+    this.stopTimers();
+    this.runId = 'run_' + Date.now();
+    this.polling = false;
+    this.completed = false;
+    this.currentSource = source;
     this.setData({
       progress: 8,
       steps: createSteps(),
       failed: false,
-      errorMessage: ''
+      errorMessage: '',
+      modeText: '流式生成'
     });
 
-    const marks = [
-      { progress: 22, done: 1, desc: '主题已识别' },
-      { progress: 48, done: 2, desc: '关键概念已收束' },
-      { progress: 76, done: 3, desc: '题目草稿已生成' }
-    ];
-    let index = 0;
+    const runId = this.runId;
+    this.noChunkTimer = setTimeout(() => {
+      this.switchToPolling(runId, '流式响应暂未返回，已切换为稳定轮询');
+    }, 3000);
 
-    const tick = () => {
-      const mark = marks[index];
-      const steps = this.data.steps.map(item => {
-        if (item.index <= mark.done) {
-          return Object.assign({}, item, { done: true, desc: item.index === mark.done ? mark.desc : item.desc });
+    api.generateQuizStream(source, {
+      onProgress: event => {
+        if (!this.isActive(runId)) return;
+        if (this.noChunkTimer) {
+          clearTimeout(this.noChunkTimer);
+          this.noChunkTimer = null;
         }
-        return item;
-      });
-      this.setData({ progress: mark.progress, steps });
-      index += 1;
-
-      if (index < marks.length) {
-        this.timer = setTimeout(tick, 520);
-        return;
+        this.applyProgress(event.progress || 18, event.message || '正在生成题目');
       }
+    })
+      .then(quiz => {
+        if (!this.isActive(runId) || this.polling) return;
+        this.completeQuiz(runId, quiz);
+      })
+      .catch(error => {
+        if (!this.isActive(runId)) return;
+        this.switchToPolling(runId, error.message || '流式生成失败，已切换为轮询');
+      });
+  },
 
-      api.generateQuiz(source)
-        .then(quiz => {
-          const steps = this.data.steps.map(item => (
-            item.index === 4
-              ? Object.assign({}, item, { done: true, failed: false, desc: '结构校验完成' })
-              : item
-          ));
-          this.setData({ progress: 100, steps, failed: false, errorMessage: '' });
-          wx.setStorageSync(api.QUIZ_KEY, quiz);
-          wx.setStorageSync(api.ANSWERS_KEY, []);
-          wx.removeStorageSync(api.REPORT_KEY);
-          this.timer = setTimeout(() => {
-            wx.redirectTo({ url: '/pages/quiz/quiz' });
-          }, 420);
-        })
-        .catch(error => {
-          const message = error.message || '生成失败，请稍后重试';
-          const steps = this.data.steps.map(item => (
-            item.index === 4
-              ? Object.assign({}, item, { done: false, failed: true, desc: message })
-              : item
-          ));
-          this.setData({ progress: 76, steps, failed: true, errorMessage: message });
-          wx.showToast({ title: '生成失败，请查看提示', icon: 'none' });
-        });
-    };
+  switchToPolling(runId, message) {
+    if (!this.isActive(runId) || this.polling || this.completed) return;
+    this.polling = true;
+    if (this.noChunkTimer) {
+      clearTimeout(this.noChunkTimer);
+      this.noChunkTimer = null;
+    }
+    this.setData({ modeText: '轮询生成' });
+    this.applyProgress(Math.max(this.data.progress, 18), message || '已切换为稳定轮询');
 
-    this.timer = setTimeout(tick, 420);
+    api.createQuizJob(this.currentSource)
+      .then(job => {
+        if (!this.isActive(runId)) return;
+        this.pollJob(runId, job.jobId, 0);
+      })
+      .catch(() => {
+        if (!this.isActive(runId)) return;
+        this.applyProgress(Math.max(this.data.progress, 24), '轮询创建失败，尝试普通生成');
+        api.generateQuiz(this.currentSource)
+          .then(quiz => this.completeQuiz(runId, quiz))
+          .catch(error => this.failGenerate(runId, error.message || '生成失败，请稍后重试'));
+      });
+  },
+
+  pollJob(runId, jobId, count) {
+    if (!this.isActive(runId) || this.completed) return;
+    if (count > 75) {
+      this.failGenerate(runId, '生成超时，请稍后重试');
+      return;
+    }
+
+    api.getJobStatus(jobId)
+      .then(job => {
+        if (!this.isActive(runId)) return;
+        this.applyProgress(job.progress || this.data.progress, job.message || '正在生成中');
+        if (job.status === 'succeeded') {
+          this.completeQuiz(runId, quizFromJob(job));
+          return;
+        }
+        if (job.status === 'failed') {
+          const message = job.error && job.error.message ? job.error.message : '生成失败，请稍后重试';
+          this.failGenerate(runId, message);
+          return;
+        }
+        this.pollTimer = setTimeout(() => this.pollJob(runId, jobId, count + 1), 1200);
+      })
+      .catch(error => {
+        if (!this.isActive(runId)) return;
+        this.failGenerate(runId, error.message || '查询生成任务失败');
+      });
+  },
+
+  applyProgress(progress, message) {
+    const safeProgress = Math.max(8, Math.min(Number(progress) || 8, 99));
+    const doneCount = safeProgress >= 90 ? 3 : safeProgress >= 68 ? 2 : safeProgress >= 30 ? 1 : 0;
+    const steps = this.data.steps.map(item => {
+      if (item.index <= doneCount) {
+        return Object.assign({}, item, { done: true, failed: false, desc: item.index === doneCount ? message : item.desc });
+      }
+      if (item.index === doneCount + 1) {
+        return Object.assign({}, item, { desc: message });
+      }
+      return item;
+    });
+    this.setData({ progress: safeProgress, steps });
+  },
+
+  completeQuiz(runId, quiz) {
+    if (!this.isActive(runId) || this.completed) return;
+    this.completed = true;
+    this.stopTimers();
+    const steps = this.data.steps.map(item => (
+      item.index === 4
+        ? Object.assign({}, item, { done: true, failed: false, desc: '结构校验完成' })
+        : Object.assign({}, item, { done: true, failed: false })
+    ));
+    this.setData({ progress: 100, steps, failed: false, errorMessage: '' });
+    wx.setStorageSync(api.QUIZ_KEY, quiz);
+    wx.setStorageSync(api.ANSWERS_KEY, []);
+    wx.removeStorageSync(api.REPORT_KEY);
+    this.redirectTimer = setTimeout(() => {
+      if (this.isActive(runId)) wx.redirectTo({ url: '/pages/quiz/quiz' });
+    }, 420);
+  },
+
+  failGenerate(runId, message) {
+    if (!this.isActive(runId)) return;
+    this.stopTimers();
+    const steps = this.data.steps.map(item => (
+      item.index === 4
+        ? Object.assign({}, item, { done: false, failed: true, desc: message })
+        : item
+    ));
+    this.setData({ progress: Math.max(this.data.progress, 76), steps, failed: true, errorMessage: message });
+    wx.showToast({ title: '生成失败，请查看提示', icon: 'none' });
+  },
+
+  stopTimers() {
+    if (this.noChunkTimer) clearTimeout(this.noChunkTimer);
+    if (this.pollTimer) clearTimeout(this.pollTimer);
+    if (this.redirectTimer) clearTimeout(this.redirectTimer);
+    this.noChunkTimer = null;
+    this.pollTimer = null;
+    this.redirectTimer = null;
+  },
+
+  isActive(runId) {
+    return this.runId === runId;
   },
 
   retryGenerate() {
@@ -105,3 +194,11 @@ Page({
     wx.redirectTo({ url: '/pages/index/index' });
   }
 });
+
+function quizFromJob(job) {
+  const result = job.result || {};
+  const quiz = result.quiz || {};
+  quiz.modelProvider = result.provider || 'unknown';
+  quiz.fallbackReason = result.fallbackReason || '';
+  return quiz;
+}
