@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from app.errors import AppError
 from app.main import app
 from app.services.webpage_parser import ParsedWebPage
 from app.services import webpage_parser
@@ -52,3 +53,126 @@ def test_generate_quiz_from_invalid_url_returns_error():
 
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "URL_INVALID"
+
+
+def test_generate_quiz_from_url_parser_error_returns_clear_code(monkeypatch):
+    def fake_parse_url_source(url: str) -> ParsedWebPage:
+        raise AppError("URL_NOT_HTML", "该链接不是可解析的普通网页", 400)
+
+    monkeypatch.setattr(webpage_parser, "parse_url_source", fake_parse_url_source)
+
+    response = client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "sourceType": "url",
+            "content": "https://example.com/file.pdf",
+            "questionCount": 3,
+            "questionTypes": ["single_choice"],
+            "difficulty": "normal",
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 400
+    assert body["success"] is False
+    assert body["error"]["code"] == "URL_NOT_HTML"
+    assert "复制正文" in body["error"]["message"] or "普通网页" in body["error"]["message"]
+
+
+def test_generate_quiz_from_truncated_url_keeps_source_trace_without_model_fallback(monkeypatch):
+    content = "RAG 会先检索相关资料，再把资料交给大模型生成回答。这种方式可以减少幻觉，并让回答更容易追溯来源。" * 120
+
+    def fake_parse_url_source(url: str) -> ParsedWebPage:
+        return ParsedWebPage(
+            url=url,
+            title="超长 RAG 文章",
+            content=content[:6000],
+            warnings=["WEBPAGE_CONTENT_TRUNCATED"],
+        )
+
+    monkeypatch.setattr(webpage_parser, "parse_url_source", fake_parse_url_source)
+
+    response = client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "sourceType": "url",
+            "content": "https://example.com/long-rag",
+            "questionCount": 5,
+            "questionTypes": ["single_choice", "true_false"],
+            "difficulty": "normal",
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    quiz = body["data"]["quiz"]
+    assert "failed" not in body["data"]["fallbackReason"]
+    assert quiz["sourceType"] == "url"
+    assert quiz["questionCount"] == 5
+    assert all(question["sourceTrace"] for question in quiz["questions"])
+
+
+def test_generate_quiz_from_wechat_article_html(monkeypatch):
+    html = """
+    <html><body>
+      <h1 id="activity-name">公众号里的 RAG 学习笔记</h1>
+      <div id="js_content">
+        <p>RAG 会先检索相关资料，再把资料交给大模型生成回答。</p>
+        <p>这种方式可以减少幻觉，并让回答更容易追溯来源。</p>
+        <p>学习者可以把公众号文章转成题目，通过答题检查自己是否真正理解其中的关键概念。</p>
+      </div>
+    </body></html>
+    """
+
+    monkeypatch.setattr(webpage_parser, "_reject_private_host", lambda host: None)
+    monkeypatch.setattr(
+        webpage_parser,
+        "_fetch_html_page",
+        lambda url, transport=None: webpage_parser.FetchedHtml(url="https://mp.weixin.qq.com/s/rag", html=html),
+    )
+
+    response = client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "sourceType": "url",
+            "content": "https://mp.weixin.qq.com/s/rag",
+            "questionCount": 3,
+            "questionTypes": ["single_choice", "true_false"],
+            "difficulty": "normal",
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    quiz = body["data"]["quiz"]
+    assert quiz["sourceType"] == "url"
+    assert quiz["questionCount"] == 3
+    assert all(question["sourceTrace"] for question in quiz["questions"])
+
+
+def test_generate_quiz_from_unparseable_wechat_article_returns_clear_error(monkeypatch):
+    html = "<html><body><h1 id='activity-name'>不可解析文章</h1><div id='js_content'>太短</div></body></html>"
+
+    monkeypatch.setattr(webpage_parser, "_reject_private_host", lambda host: None)
+    monkeypatch.setattr(
+        webpage_parser,
+        "_fetch_html_page",
+        lambda url, transport=None: webpage_parser.FetchedHtml(url="https://mp.weixin.qq.com/s/short", html=html),
+    )
+
+    response = client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "sourceType": "url",
+            "content": "https://mp.weixin.qq.com/s/short",
+            "questionCount": 3,
+            "questionTypes": ["single_choice"],
+            "difficulty": "normal",
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 400
+    assert body["success"] is False
+    assert body["error"]["code"] == "URL_CONTENT_TOO_SHORT"
+    assert "复制正文后重试" in body["error"]["message"]
