@@ -256,3 +256,185 @@ def test_parse_url_source_routes_final_wechat_url(monkeypatch):
     assert page.url == "https://mp.weixin.qq.com/s/final"
     assert page.title == "公众号最终链接"
     assert "最终地址是公众号文章" in page.content
+
+
+def test_is_bilibili_url_detects_video_and_short_hosts():
+    assert webpage_parser._is_bilibili_url("https://www.bilibili.com/video/BV123") is True
+    assert webpage_parser._is_bilibili_url("https://m.bilibili.com/video/BV123") is True
+    assert webpage_parser._is_bilibili_url("https://bilibili.com/video/BV123") is True
+    assert webpage_parser._is_bilibili_url("https://b23.tv/abc") is True
+    assert webpage_parser._is_bilibili_url("https://example.com/video/BV123") is False
+
+
+def test_extract_json_assignment_reads_playinfo_payload():
+    html = """
+    <script>
+      window.__playinfo__={"data":{"subtitle":{"subtitles":[{"subtitle_url":"//example.com/subtitle.json"}]}}};
+    </script>
+    """
+
+    payload = webpage_parser._extract_json_assignment(html, "window.__playinfo__")
+
+    assert payload["data"]["subtitle"]["subtitles"][0]["subtitle_url"] == "//example.com/subtitle.json"
+
+
+def test_bilibili_subtitle_url_collects_first_subtitle():
+    html = """
+    <html><body>
+      <script>
+        window.__playinfo__={"data":{"subtitle":{"subtitles":[
+          {"lan":"zh-CN","subtitle_url":"//subtitle.example.com/zh.json"}
+        ]}}};
+      </script>
+    </body></html>
+    """
+
+    url = webpage_parser._bilibili_subtitle_url("https://www.bilibili.com/video/BV123", html)
+
+    assert url == "https://subtitle.example.com/zh.json"
+
+
+def test_extract_bilibili_text_from_subtitle_json(monkeypatch):
+    html = """
+    <html>
+      <head><title>AI 学习视频_哔哩哔哩_bilibili</title></head>
+      <body>
+        <h1 class="video-title">如何系统学习 AI</h1>
+        <script>
+          window.__playinfo__={"data":{"subtitle":{"subtitles":[{"subtitle_url":"//subtitle.example.com/ai.json"}]}}};
+        </script>
+      </body>
+    </html>
+    """
+    subtitle = {
+        "body": [
+            {"content": "学习 AI 时应先理解机器学习、深度学习和大模型之间的关系。"},
+            {"content": "再通过实际任务练习提示词、数据处理和模型评估，形成完整学习闭环。"},
+            {"content": "最后把学到的概念讲给别人听，用输出倒逼自己发现理解漏洞。"},
+        ]
+    }
+
+    monkeypatch.setattr(webpage_parser, "_fetch_json_url", lambda url: subtitle)
+
+    page = webpage_parser._extract_bilibili_text("https://www.bilibili.com/video/BV123", html)
+
+    assert page.title == "如何系统学习 AI"
+    assert "机器学习、深度学习和大模型" in page.content
+    assert "输出倒逼自己发现理解漏洞" in page.content
+
+
+def test_extract_bilibili_text_falls_back_to_description_when_subtitle_missing():
+    html = """
+    <html><head><meta name="description" content="这个视频介绍 AI 学习路线，先解释机器学习和深度学习的关系，再说明如何用项目练习提示词和模型评估。"></head><body>
+      <h1 class="video-title">无字幕 AI 视频</h1>
+      <script>
+        window.__INITIAL_STATE__={"videoData":{
+          "title":"无字幕 AI 视频",
+          "desc":"适合初学者理解 AI 学习路线，内容覆盖基础概念、项目练习和输出复盘。",
+          "dynamic":"建议学习者把视频要点整理成问题，再通过答题检查理解是否稳固。",
+          "tag":[{"tag_name":"人工智能"},{"tag_name":"AI学习"}]
+        }};
+      </script>
+    </body></html>
+    """
+
+    page = webpage_parser._extract_bilibili_text("https://www.bilibili.com/video/BV404", html)
+
+    assert page.title == "无字幕 AI 视频"
+    assert "AI 学习路线" in page.content
+    assert "输出复盘" in page.content
+    assert "标签：人工智能" in page.content
+    assert page.warnings == ["BILIBILI_SUBTITLE_FALLBACK_TO_DESC"]
+
+
+def test_extract_bilibili_text_rejects_missing_subtitle_and_short_description():
+    html = "<html><body><h1 class='video-title'>无字幕视频</h1><script>window.__INITIAL_STATE__={\"videoData\":{\"desc\":\"太短\"}}</script></body></html>"
+
+    with pytest.raises(AppError) as exc:
+        webpage_parser._extract_bilibili_text("https://www.bilibili.com/video/BV404", html)
+
+    assert exc.value.code == "BILIBILI_SUBTITLE_NOT_FOUND"
+
+
+def test_extract_bilibili_text_uses_subtitle_before_description(monkeypatch):
+    html = """
+    <html><head><meta name="description" content="简介内容不应该覆盖已有字幕。"></head><body>
+      <h1 class="video-title">字幕优先视频</h1>
+      <script>window.__playinfo__={"data":{"subtitle":{"subtitles":[{"subtitle_url":"//subtitle.example.com/prefer.json"}]}}};</script>
+      <script>window.__INITIAL_STATE__={"videoData":{"desc":"这是简介兜底内容。"}};</script>
+    </body></html>
+    """
+    monkeypatch.setattr(
+        webpage_parser,
+        "_fetch_json_url",
+        lambda url: {
+            "body": [
+                {"content": "字幕正文应该优先用于出题，因为它比视频简介更接近视频真实讲解内容。"},
+                {"content": "这里继续补充足够长的字幕文本，确保解析结果不会触发简介兜底，并能继续进入后续出题和答题报告流程。"},
+            ]
+        },
+    )
+
+    page = webpage_parser._extract_bilibili_text("https://www.bilibili.com/video/BVPREFER", html)
+
+    assert "字幕正文应该优先用于出题" in page.content
+    assert "简介兜底内容" not in page.content
+    assert page.warnings == []
+
+
+def test_extract_bilibili_text_rejects_short_subtitle(monkeypatch):
+    html = """
+    <html><body>
+      <script>window.__playinfo__={"data":{"subtitle":{"subtitles":[{"subtitle_url":"//subtitle.example.com/short.json"}]}}};</script>
+    </body></html>
+    """
+    monkeypatch.setattr(webpage_parser, "_fetch_json_url", lambda url: {"body": [{"content": "太短"}]})
+
+    with pytest.raises(AppError) as exc:
+        webpage_parser._extract_bilibili_text("https://www.bilibili.com/video/BVSHORT", html)
+
+    assert exc.value.code == "URL_CONTENT_TOO_SHORT"
+
+
+def test_extract_bilibili_text_truncates_long_subtitle(monkeypatch):
+    monkeypatch.setattr(webpage_parser, "MAX_EXTRACTED_TEXT_LENGTH", 100)
+    html = """
+    <html><body>
+      <script>window.__playinfo__={"data":{"subtitle":{"subtitles":[{"subtitle_url":"//subtitle.example.com/long.json"}]}}};</script>
+    </body></html>
+    """
+    monkeypatch.setattr(webpage_parser, "_fetch_json_url", lambda url: {"body": [{"content": "B 站字幕可以变成学习材料。" * 30}]})
+
+    page = webpage_parser._extract_bilibili_text("https://www.bilibili.com/video/BVLONG", html)
+
+    assert len(page.content) == 100
+    assert page.warnings == ["WEBPAGE_CONTENT_TRUNCATED"]
+
+
+def test_parse_url_source_routes_final_bilibili_url(monkeypatch):
+    html = """
+    <html><body>
+      <h1 class="video-title">最终 B 站视频</h1>
+      <script>window.__playinfo__={"data":{"subtitle":{"subtitles":[{"subtitle_url":"//subtitle.example.com/final.json"}]}}};</script>
+    </body></html>
+    """
+    subtitle = {
+        "body": [
+            {"content": "短链跳转后的最终地址如果是 B 站视频，就应该进入字幕解析流程。"},
+            {"content": "字幕文本会被整理成学习正文，再复用现有的出题、答题和报告链路，帮助用户把视频内容变成可反馈的学习任务。"},
+        ]
+    }
+
+    monkeypatch.setattr(webpage_parser, "_reject_private_host", lambda host: None)
+    monkeypatch.setattr(
+        webpage_parser,
+        "_fetch_html_page",
+        lambda url, transport=None: webpage_parser.FetchedHtml(url="https://www.bilibili.com/video/BVFINAL", html=html),
+    )
+    monkeypatch.setattr(webpage_parser, "_fetch_json_url", lambda url: subtitle)
+
+    page = webpage_parser.parse_url_source("https://b23.tv/final")
+
+    assert page.url == "https://www.bilibili.com/video/BVFINAL"
+    assert page.title == "最终 B 站视频"
+    assert "字幕解析流程" in page.content

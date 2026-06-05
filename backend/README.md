@@ -32,6 +32,7 @@ The backend test suite covers:
 - MySQL-backed history APIs.
 - Plain webpage URL parsing and quiz generation.
 - Public WeChat article parsing through `mp.weixin.qq.com` URLs.
+- Bilibili public video subtitle parsing through `bilibili.com` or `b23.tv` URLs.
 - URL safety checks, redirect limits, non-HTML rejection, short-content errors, and long-content truncation.
 
 ## Optional MySQL history storage
@@ -62,11 +63,11 @@ The script checks `health -> quiz generation -> report generation -> save histor
 
 ## URL and WeChat article parsing
 
-`POST /api/v1/quiz/generate` accepts `sourceType=url`. The parser supports ordinary public HTML webpages and publicly accessible WeChat article pages under `mp.weixin.qq.com`.
+`POST /api/v1/quiz/generate` accepts `sourceType=url`. The parser supports ordinary public HTML webpages, publicly accessible WeChat article pages under `mp.weixin.qq.com`, and Bilibili public videos when subtitle JSON is discoverable from the page. If a Bilibili video has no accessible subtitle URL, the parser falls back to public title/description/tag text when that text is long enough.
 
 Current limits:
 
 - No login simulation or anti-scraping bypass.
 - No JavaScript-rendered page execution.
-- No Bilibili, PDF/Doc, OCR, or audio transcription yet.
-- If parsing fails or the article body is too short, ask the user to copy the article body and retry as plain text.
+- No Bilibili audio download, speech transcription, PDF/Doc, or OCR yet.
+- If parsing fails or the body/subtitle is too short, ask the user to copy the article body, video subtitle, or video notes and retry as plain text.

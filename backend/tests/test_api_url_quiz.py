@@ -176,3 +176,115 @@ def test_generate_quiz_from_unparseable_wechat_article_returns_clear_error(monke
     assert body["success"] is False
     assert body["error"]["code"] == "URL_CONTENT_TOO_SHORT"
     assert "复制正文后重试" in body["error"]["message"]
+
+
+def test_generate_quiz_from_bilibili_subtitle(monkeypatch):
+    html = """
+    <html><body>
+      <h1 class="video-title">AI 学习路线视频</h1>
+      <script>
+        window.__playinfo__={"data":{"subtitle":{"subtitles":[{"subtitle_url":"//subtitle.example.com/ai.json"}]}}};
+      </script>
+    </body></html>
+    """
+    subtitle = {
+        "body": [
+            {"content": "学习 AI 时应该先理解机器学习、深度学习和大模型之间的关系。"},
+            {"content": "之后通过项目练习提示词设计、数据处理和模型评估，把概念变成可操作能力。"},
+            {"content": "最后用输出复盘的方法检查自己是否真正掌握了这些核心知识。"},
+        ]
+    }
+
+    monkeypatch.setattr(webpage_parser, "_reject_private_host", lambda host: None)
+    monkeypatch.setattr(
+        webpage_parser,
+        "_fetch_html_page",
+        lambda url, transport=None: webpage_parser.FetchedHtml(url="https://www.bilibili.com/video/BVAI", html=html),
+    )
+    monkeypatch.setattr(webpage_parser, "_fetch_json_url", lambda url: subtitle)
+
+    response = client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "sourceType": "url",
+            "content": "https://www.bilibili.com/video/BVAI",
+            "questionCount": 3,
+            "questionTypes": ["single_choice", "true_false"],
+            "difficulty": "normal",
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    quiz = body["data"]["quiz"]
+    assert quiz["sourceType"] == "url"
+    assert quiz["questionCount"] == 3
+    assert all(question["sourceTrace"] for question in quiz["questions"])
+
+
+def test_generate_quiz_from_bilibili_without_subtitle_uses_description_fallback(monkeypatch):
+    html = """
+    <html><head><meta name="description" content="这个视频介绍 AI 学习路线，帮助新手理解机器学习、深度学习和大模型之间的关系。"></head><body>
+      <h1 class="video-title">无字幕 AI 学习视频</h1>
+      <script>
+        window.__INITIAL_STATE__={"videoData":{
+          "title":"无字幕 AI 学习视频",
+          "desc":"视频说明如何从基础概念、项目实践和输出复盘三个阶段学习 AI。",
+          "dynamic":"适合把视频简介转成自测题，检查自己是否理解学习路线。"
+        }};
+      </script>
+    </body></html>
+    """
+
+    monkeypatch.setattr(webpage_parser, "_reject_private_host", lambda host: None)
+    monkeypatch.setattr(
+        webpage_parser,
+        "_fetch_html_page",
+        lambda url, transport=None: webpage_parser.FetchedHtml(url="https://www.bilibili.com/video/BVDESC", html=html),
+    )
+
+    response = client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "sourceType": "url",
+            "content": "https://www.bilibili.com/video/BVDESC",
+            "questionCount": 3,
+            "questionTypes": ["single_choice", "true_false"],
+            "difficulty": "normal",
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    quiz = body["data"]["quiz"]
+    assert quiz["sourceType"] == "url"
+    assert quiz["questionCount"] == 3
+    assert all(question["sourceTrace"] for question in quiz["questions"])
+
+
+def test_generate_quiz_from_bilibili_without_subtitle_and_short_description_returns_clear_error(monkeypatch):
+    html = "<html><body><h1 class='video-title'>无字幕视频</h1><script>window.__INITIAL_STATE__={\"videoData\":{\"desc\":\"太短\"}}</script></body></html>"
+
+    monkeypatch.setattr(webpage_parser, "_reject_private_host", lambda host: None)
+    monkeypatch.setattr(
+        webpage_parser,
+        "_fetch_html_page",
+        lambda url, transport=None: webpage_parser.FetchedHtml(url="https://www.bilibili.com/video/BV404", html=html),
+    )
+
+    response = client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "sourceType": "url",
+            "content": "https://www.bilibili.com/video/BV404",
+            "questionCount": 3,
+            "questionTypes": ["single_choice"],
+            "difficulty": "normal",
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 400
+    assert body["success"] is False
+    assert body["error"]["code"] == "BILIBILI_SUBTITLE_NOT_FOUND"
+    assert "复制字幕" in body["error"]["message"]

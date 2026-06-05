@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ipaddress
+import json
 import re
 import socket
 from dataclasses import dataclass, field
@@ -36,6 +37,8 @@ class FetchedHtml:
 def parse_url_source(url: str) -> ParsedWebPage:
     safe_url = _validate_url(url)
     fetched = _fetch_html_page(safe_url)
+    if _is_bilibili_url(fetched.url):
+        return _extract_bilibili_text(fetched.url, fetched.html)
     if _is_wechat_article_url(fetched.url):
         return _extract_wechat_text(fetched.url, fetched.html)
     return _extract_text(fetched.url, fetched.html)
@@ -161,6 +164,223 @@ def _extract_text(url: str, html: str) -> ParsedWebPage:
 
 def _is_wechat_article_url(url: str) -> bool:
     return (urlparse(str(url or "")).hostname or "").lower() == "mp.weixin.qq.com"
+
+
+def _is_bilibili_url(url: str) -> bool:
+    host = (urlparse(str(url or "")).hostname or "").lower()
+    return host == "b23.tv" or host == "bilibili.com" or host.endswith(".bilibili.com")
+
+
+def _extract_bilibili_text(url: str, html: str) -> ParsedWebPage:
+    title = _bilibili_title(html, url)
+    subtitle_url = _bilibili_subtitle_url(url, html)
+    if not subtitle_url:
+        return _extract_bilibili_description(url, html, title)
+
+    subtitle = _fetch_json_url(subtitle_url)
+    text = _subtitle_json_to_text(subtitle)
+    warnings: list[str] = []
+    if len(text) > MAX_EXTRACTED_TEXT_LENGTH:
+        text = text[:MAX_EXTRACTED_TEXT_LENGTH]
+        warnings.append("WEBPAGE_CONTENT_TRUNCATED")
+
+    if len(text) < MIN_EXTRACTED_TEXT_LENGTH:
+        raise AppError("URL_CONTENT_TOO_SHORT", "B 站字幕正文太少，请复制字幕或视频简介后重试", 400)
+
+    return ParsedWebPage(url=url, title=title, content=text, warnings=warnings)
+
+
+def _extract_bilibili_description(url: str, html: str, title: str | None = None) -> ParsedWebPage:
+    title = title or _bilibili_title(html, url)
+    pieces = [f"视频标题：{title}"]
+    payloads = []
+    for variable in ("window.__INITIAL_STATE__", "__INITIAL_STATE__"):
+        payload = _extract_json_assignment(html, variable)
+        if payload is not None:
+            payloads.append(payload)
+
+    for payload in payloads:
+        pieces.extend(_bilibili_description_pieces(payload))
+
+    soup = BeautifulSoup(html, "html.parser")
+    for selector in (
+        "meta[name='description']",
+        "meta[property='og:description']",
+        ".video-desc",
+        ".desc-info-text",
+        ".basic-desc-info",
+    ):
+        node = soup.select_one(selector)
+        if not node:
+            continue
+        text = node.get("content") if node.name == "meta" else node.get_text(" ", strip=True)
+        if text:
+            pieces.append(text)
+
+    text = "\n".join(_dedupe_keep_order([_clean_text(piece) for piece in pieces if _clean_text(piece)]))
+    warnings = ["BILIBILI_SUBTITLE_FALLBACK_TO_DESC"]
+    if len(text) > MAX_EXTRACTED_TEXT_LENGTH:
+        text = text[:MAX_EXTRACTED_TEXT_LENGTH]
+        warnings.append("WEBPAGE_CONTENT_TRUNCATED")
+
+    if len(text) < MIN_EXTRACTED_TEXT_LENGTH:
+        raise AppError("BILIBILI_SUBTITLE_NOT_FOUND", "该 B 站视频暂未发现可解析字幕，请复制字幕或视频简介后重试", 400)
+
+    return ParsedWebPage(url=url, title=title, content=text, warnings=warnings)
+
+
+def _bilibili_description_pieces(payload: object) -> list[str]:
+    pieces: list[str] = []
+    if not isinstance(payload, dict):
+        return pieces
+
+    video_data = payload.get("videoData")
+    if isinstance(video_data, dict):
+        for key in ("title", "desc", "dynamic"):
+            value = video_data.get(key)
+            if isinstance(value, str) and value.strip():
+                pieces.append(value)
+        tags = video_data.get("tag") or video_data.get("tags")
+        pieces.extend(_tag_texts(tags))
+
+    for key in ("title", "desc", "description", "dynamic"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            pieces.append(value)
+    pieces.extend(_tag_texts(payload.get("tags") or payload.get("tag")))
+    return pieces
+
+
+def _tag_texts(value: object) -> list[str]:
+    result: list[str] = []
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict):
+                text = item.get("tag_name") or item.get("name") or item.get("title")
+            else:
+                text = item
+            if isinstance(text, str) and text.strip():
+                result.append(f"标签：{text}")
+    return result
+
+
+def _bilibili_title(html: str, url: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    candidates = [
+        soup.select_one("h1.video-title"),
+        soup.select_one("h1"),
+        soup.select_one("meta[property='og:title']"),
+        soup.title,
+    ]
+    for candidate in candidates:
+        if not candidate:
+            continue
+        text = candidate.get("content") if candidate.name == "meta" else candidate.get_text(" ", strip=True)
+        text = _clean_text(text or "").replace("_哔哩哔哩_bilibili", "").replace("_哔哩哔哩", "")
+        if text:
+            return text[:80]
+    return urlparse(url).netloc or "B 站视频"
+
+
+def _bilibili_subtitle_url(page_url: str, html: str) -> str:
+    candidates: list[str] = []
+    for variable in ("window.__playinfo__", "__playinfo__", "window.__INITIAL_STATE__", "__INITIAL_STATE__"):
+        payload = _extract_json_assignment(html, variable)
+        if payload is not None:
+            candidates.extend(_collect_subtitle_urls(payload))
+
+    for value in candidates:
+        text = str(value or "").strip()
+        if text:
+            return urljoin(page_url, text)
+    return ""
+
+
+def _extract_json_assignment(html: str, variable: str) -> object | None:
+    marker = f"{variable}="
+    start = html.find(marker)
+    if start < 0:
+        return None
+    start += len(marker)
+    while start < len(html) and html[start].isspace():
+        start += 1
+    if start >= len(html) or html[start] not in "[{":
+        return None
+
+    opener = html[start]
+    closer = "}" if opener == "{" else "]"
+    depth = 0
+    in_string = False
+    escape = False
+    for index in range(start, len(html)):
+        char = html[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+            continue
+        if char == opener:
+            depth += 1
+        elif char == closer:
+            depth -= 1
+            if depth == 0:
+                try:
+                    return json.loads(html[start : index + 1])
+                except json.JSONDecodeError:
+                    return None
+    return None
+
+
+def _collect_subtitle_urls(value: object) -> list[str]:
+    urls: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key == "subtitle_url" and isinstance(child, str):
+                urls.append(child)
+            else:
+                urls.extend(_collect_subtitle_urls(child))
+    elif isinstance(value, list):
+        for child in value:
+            urls.extend(_collect_subtitle_urls(child))
+    return urls
+
+
+def _fetch_json_url(url: str) -> object:
+    try:
+        with httpx.Client(timeout=FETCH_TIMEOUT_SECONDS, headers={"User-Agent": "AI-Super-Questions/0.1"}) as client:
+            response = client.get(url)
+            response.raise_for_status()
+            return response.json()
+    except httpx.TimeoutException as exc:
+        raise AppError("BILIBILI_SUBTITLE_FETCH_TIMEOUT", "B 站字幕读取超时，请复制字幕或视频简介后重试", 504) from exc
+    except (httpx.HTTPError, json.JSONDecodeError) as exc:
+        raise AppError("BILIBILI_SUBTITLE_FETCH_FAILED", "B 站字幕读取失败，请复制字幕或视频简介后重试", 400) from exc
+
+
+def _subtitle_json_to_text(value: object) -> str:
+    lines: list[str] = []
+    body = value.get("body") if isinstance(value, dict) else value
+    if isinstance(body, list):
+        for item in body:
+            if isinstance(item, dict):
+                text = _clean_text(item.get("content") or item.get("text") or "")
+            else:
+                text = _clean_text(item)
+            if text:
+                lines.append(text)
+    elif isinstance(body, str):
+        lines.append(_clean_text(body))
+
+    text = "\n".join(_dedupe_keep_order(lines))
+    if not text:
+        raise AppError("BILIBILI_SUBTITLE_NOT_FOUND", "该 B 站视频暂未发现可解析字幕，请复制字幕或视频简介后重试", 400)
+    return text
 
 
 def _extract_wechat_text(url: str, html: str) -> ParsedWebPage:
